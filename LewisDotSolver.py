@@ -65,33 +65,43 @@ with open("model_temp.wcsp", "w+") as f:
         f.write("7 ")
         domain += "7"
     f.write("\n")
-
-    #constraint for 2*bonds is var
-    counter = 0
-    index = domain.find("7")
-    for i in range (index, num_vars):
-        f.write(f"1 {i} 0 3\n1 10\n3 10\n5 10\n")
-        counter += 1
+   
+    #create matrix for each element pairs
+    matrix = np.zeros([length, length], dtype=int)
+    for i in range(length):
+        for j in range(length):
+            if i == j:
+                matrix[i, j] = i
+            else:
+                matrix[i, j] = i + (len(newSplit) - 1) + j
 
     #add constraints for bonds according to molecule type
+    counter = 0
     if type == "covalent":
-        matrix = np.zeros([length, length], dtype=int)
-        for i in range(length):
-            for j in range(length):
-                if i == j:
-                    matrix[i, j] = i
-                else:
-                    matrix[i, j] = i + (len(newSplit) - 1) + j
+        #constraint for 2*bonds is var
+        for i in range (length, num_vars):
+            f.write(f"1 {i} 0 3\n1 10\n3 10\n5 10\n")
+            counter += 1
         for x in range(len(newSplit)):
-            f.write(f"3  {' '.join(map(str, matrix[x]))} -1 wsum hard 10 == ")
+            f.write(f"3 {' '.join(map(str, matrix[x]))} -1 wsum hard 10 == ")
             #octet and duet rule
-            if newSplit[x] == 'H' or newSplit[i] == "He":
+            if newSplit[x] == 'H' or newSplit[x] == "He":
                 f.write("2\n")
             else:
                 f.write("8\n")
             counter += 1
-    
-    #add ionic
+    else:
+        for i in range (length, num_vars):
+            f.write(f"1 {i} 10 3\n0 0\n")
+            counter += 1
+        i = 0
+        for x in valence:
+            if x >= 4:
+                f.write(f"3 {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 8\n")
+            else:
+                #looses electrons
+                f.write(f"3 {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 0\n")
+            i += 1
 
 #reads file to replace placeholder
 with open("model_temp.wcsp", "r") as f:

@@ -12,6 +12,6 @@ Model 6 9 6 10
 1 10
 3 10
 5 10
-3  0 3 4 -1 wsum hard 10 == 8
-3  3 1 5 -1 wsum hard 10 == 2
-3  4 5 2 -1 wsum hard 10 == 2
+3 0 3 4 -1 wsum hard 10 == 8
+3 3 1 5 -1 wsum hard 10 == 2
+3 4 5 2 -1 wsum hard 10 == 2
