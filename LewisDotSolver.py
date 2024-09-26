@@ -25,7 +25,6 @@ type = input("Is this molecule ionic or covalent?: ").lower()
 split = []
 split = re.findall(r'([A-Z][a-z]*)(\d*)', inp)
 newSplit = []
-print(split)
 for element, count in split:
     if count == '':
         count = 1
@@ -68,12 +67,22 @@ with open("model_temp.wcsp", "w+") as f:
    
     #create matrix for each element pairs
     matrix = np.zeros([length, length], dtype=int)
+    next = 1
     for i in range(length):
         for j in range(length):
             if i == j:
                 matrix[i, j] = i
             else:
-                matrix[i, j] = i + (len(newSplit) - 1) + j
+                if i == 0:
+                    matrix[i, j] = i + (length - 1) + j
+                else:
+                    if matrix.item((j, i)) != 0:
+                        matrix[i, j] = matrix.item((j, i))
+                    else: 
+                        matrix[i, j] = matrix.item((0, length-1)) + next
+                        next += 1
+
+    print(matrix)
 
     #add constraints for bonds according to molecule type
     counter = 0
@@ -83,7 +92,7 @@ with open("model_temp.wcsp", "w+") as f:
             f.write(f"1 {i} 0 3\n1 10\n3 10\n5 10\n")
             counter += 1
         for x in range(len(newSplit)):
-            f.write(f"3 {' '.join(map(str, matrix[x]))} -1 wsum hard 10 == ")
+            f.write(f"{length} {' '.join(map(str, matrix[x]))} -1 wsum hard 10 == ")
             #octet and duet rule
             if newSplit[x] == 'H' or newSplit[x] == "He":
                 f.write("2\n")
