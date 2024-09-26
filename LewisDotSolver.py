@@ -36,6 +36,7 @@ print(newSplit)
 #rearranges so central is first
 central = min(newSplit, key=newSplit.count)
 newSplit.insert(0, newSplit.pop(newSplit.index(central)))
+print(newSplit)
 
 #gets valence of each element
 valence = []
@@ -58,8 +59,12 @@ with open("model_temp.wcsp", "w+") as f:
     #writes variable domains
     domain = ""
     for i in valence:
-        f.write(f"{i} ")
-        domain += f"{i}"
+        if type == "ionic" and i > 4:
+            f.write("9 ")
+            domain += "9"
+        else:
+            f.write(f"{i} ")
+            domain += f"{i}"
     for x in combos:
         f.write("7 ")
         domain += "7"
@@ -101,16 +106,17 @@ with open("model_temp.wcsp", "w+") as f:
             counter += 1
     else:
         for i in range (length, num_vars):
-            f.write(f"1 {i} 10 3\n0 0\n")
+            f.write(f"1 {i} 10 1\n0 0\n")
             counter += 1
         i = 0
         for x in valence:
             if x >= 4:
-                f.write(f"3 {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 8\n")
+                f.write(f"{length} {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 8\n")
             else:
                 #looses electrons
-                f.write(f"3 {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 0\n")
+                f.write(f"{length} {' '.join(map(str, matrix[i]))} -1 wsum hard 10 == 0\n")
             i += 1
+            counter += 1
 
 #reads file to replace placeholder
 with open("model_temp.wcsp", "r") as f:
