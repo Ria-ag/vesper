@@ -104,6 +104,11 @@ with open("model_temp.wcsp", "w+") as f:
             else:
                 f.write("8\n")
             counter += 1
+        index = length
+        while index < length + (length - 1):
+            f.write(f"1 {index} 0 1\n0 10\n")
+            counter += 1
+            index += 1
     else:
         for i in range (length, num_vars):
             f.write(f"1 {i} 10 1\n0 0\n")

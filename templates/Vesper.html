@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vesper</title>
+</head>
+<body>
+    <h1>Vesper</h1>
+    <form action="/run_code" method="POST">
+        <label for="inp">Molecule name (eg. H2O, NaCl):</label>
+        <input type="text" id="inp" name="inp" required>
+        <br>
+        <label for="type">Is it covalent or ionic?:</label>
+        <input type="text" id="type" name="type" required>
+        <br>
+        <button type="submit">Run</button>
+    </form>
+    <div id="output"></div>
+</body>
+</html>
