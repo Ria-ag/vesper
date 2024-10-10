@@ -143,7 +143,7 @@ def index():
 #route to run the wcsp code
 @app.route('/run_code', methods=['POST'])
 def run_code():
-    inp = request.form['input']
+    inp = request.form['inp']
     type = request.form['type']
     
     #run og python code to generate wcsp file
@@ -151,7 +151,7 @@ def run_code():
 
     #copy wcsp file to google cloud instance
     scp_command = f"gcloud compute scp {wcspFilePath} writetoriaa@toulbar-test:/home/writetoriaa"
-    scp_result = subprocess.run(scp_command, shell=True, capture_output=True, text=True)
+    subprocess.run(scp_command, shell=True, capture_output=True, text=True)
     
     #ssh into the instance and run toulbar2
     ssh_command = f"gcloud compute ssh writetoriaa@toulbar-test --command='toulbar2 model.wcsp -s -a'"

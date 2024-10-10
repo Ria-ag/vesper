@@ -7,15 +7,40 @@
 </head>
 <body>
     <h1>Vesper</h1>
-    <form action="/run_code" method="POST">
+    <form id = "wcspForm">
         <label for="inp">Molecule name (eg. H2O, NaCl):</label>
         <input type="text" id="inp" name="inp" required>
         <br>
         <label for="type">Is it covalent or ionic?:</label>
         <input type="text" id="type" name="type" required>
         <br>
-        <button type="submit">Run</button>
+        <button type="submit">Submit</button>
     </form>
     <div id="output"></div>
+    <script>
+        document.getElementById('wcspForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/run_code', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('output').textContent = 'Output: ' + data.output;
+            })
+            .catch((error) => {
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            });
+        });
+    </script>
 </body>
 </html>
