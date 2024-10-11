@@ -58,6 +58,7 @@ with open("model_temp.wcsp", "w+") as f:
 
     #writes variable domains
     domain = ""
+    #make it so that when you subtract a valence it resets to 8 (for the next shell)
     for i in valence:
         if type == "ionic" and i > 4:
             f.write("9 ")

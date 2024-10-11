@@ -149,12 +149,8 @@ def run_code():
     #run og python code to generate wcsp file
     wcspFilePath = createWCSPFile(inp, type)
 
-    #copy wcsp file to google cloud instance
-    scp_command = f"gcloud compute scp {wcspFilePath} writetoriaa@toulbar-test:/home/writetoriaa"
-    subprocess.run(scp_command, shell=True, capture_output=True, text=True)
-    
     #ssh into the instance and run toulbar2
-    ssh_command = f"gcloud compute ssh writetoriaa@toulbar-test --command='toulbar2 model.wcsp -s -a'"
+    ssh_command = f"toulbar2 model.wcsp -s -a"
     ssh_result = subprocess.run(ssh_command, shell=True, capture_output=True, text=True)
 
     #parse output to get solution
@@ -172,4 +168,4 @@ def run_code():
         return jsonify({'output': 'Solution not found'}), 500
     
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
