@@ -133,7 +133,7 @@ def createWCSPFile(inp, type):
     os.remove("model_temp.wcsp")
     print("WCSP model written to 'model.wcsp'.")
 
-    return "model.wcsp"
+    return "model.wcsp", num_vars, newSplit
 
 #route to render the html page
 @app.route('/')
@@ -147,7 +147,7 @@ def run_code():
     type = request.form['type']
     
     #run og python code to generate wcsp file
-    wcspFilePath = createWCSPFile(inp, type)
+    wcspFilePath, num_vars, newSplit = createWCSPFile(inp, type)
 
     #ssh into the instance and run toulbar2
     ssh_command = f"toulbar2 model.wcsp -s -a"
@@ -163,7 +163,7 @@ def run_code():
 
     #return or error
     if solution:
-        return jsonify({'output': solution})
+        return jsonify({'output': solution, 'num_vars': num_vars, 'elements': newSplit})
     else:
         return jsonify({'output': 'Solution not found'}), 500
     

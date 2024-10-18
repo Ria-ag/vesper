@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vesper</title>
+   <script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+    <link href = "Vesper.css" rel="stylesheet">
 </head>
 <body>
     <h1>Vesper</h1>
@@ -17,6 +19,7 @@
         <button type="submit">Submit</button>
     </form>
     <div id="output"></div>
+    <div id="cy"></div>
     <script>
         document.getElementById('wcspForm').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -36,11 +39,96 @@
             })
             .then(data => {
                 document.getElementById('output').textContent = 'Output: ' + data.output;
+                var num_vars = data.num_vars;
+                var input = data.output;
+                var elements = data.elements;
+                var graph = parseInput(input, num_vars, elements);
+                var cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    elements: graph.nodes.concat(graph.edges),
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'label': 'data(label)',
+                                'background-color': '#61bffc',
+                                'text-valign': 'center',
+                                'text-halign': 'center',
+                                'shape': 'ellipse',
+                                'width': 40,
+                                'height': 40,
+                                'font-size': 12,
+                                'border-width': 2,
+                                'border-color': '#333'
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'label': 'data(label)',
+                                'line-color': '#ccc',
+                                'width': 3,
+                                'target-arrow-shape': 'triangle',
+                                'target-arrow-color': '#ccc',
+                                'curve-style': 'bezier',
+                                'text-background-color': '#ffffff',
+                                'text-background-opacity': 1,
+                                'text-margin-y': -10,
+                                'font-size': 10,
+                            }
+                        }
+                    ],
+                    layout: {
+                        name: 'grid',
+                        rows: Math.ceil(Math.sqrt(elements.length)),
+                    }
+                });
             })
             .catch((error) => {
                 document.getElementById('output').textContent = 'Error: ' + error.message;
             });
         });
-    </script>
+    
+        function parseInput(input, num_vars, elements) {
+            let values = input.substring(23, num_vars * 2 + 22);
+            let numVals = values.split(' ').map(Number);
+            let lonePairs = numVals.slice(0, elements.length);
+            let bonds = numVals.slice(elements.length);
+            
+            let nodes = [];
+            for (let i = 0; i < elements.length; i++) {
+                nodes.push({
+                    data: {
+                        id: elements[i],
+                        label: `${elements[i]} (${lonePairs[i]} Lone Pairs)`
+                    },
+                    position: {
+                        x: 100 + i * 100,
+                        y: 200
+                    }
+                });
+            }
+    
+            let edges = [];
+            let bondIndex = 0;
+            for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                    let bond = bonds[bondIndex];
+                    bondIndex++;
+                    if (bond > 0) {
+                        edges.push({
+                            data: {
+                                source: elements[i],
+                                target: elements[j],
+                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Unknown Bond'
+                            }
+                        });
+                    }
+                }
+            }
+    
+            return { nodes, edges };
+        }
+    </script>    
 </body>
 </html>
