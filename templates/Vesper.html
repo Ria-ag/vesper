@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Vesper</h1>
-    <form id = "wcspForm">
+    <form id="wcspForm">
         <label for="inp">Molecule name (eg. H2O, NaCl):</label>
         <input type="text" id="inp" name="inp" required>
         <br>
@@ -32,16 +32,17 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
+                    throw new Error('Network response was not ok: ' + response.statusText);
                 }
                 return response.json();
             })
             .then(data => {
                 document.getElementById('output').textContent = 'Output: ' + data.output;
-                var num_vars = data.num_vars;
-                var input = data.output;
-                var elements = renameDuplicates(data.elements);
-                var graph = parseInput(input, num_vars, elements);
+                const num_vars = data.num_vars;
+                const input = data.output;
+                const elements = renameDuplicates(data.elements);
+                const graph = parseInput(input, num_vars, elements);
+                
                 var cy = cytoscape({
                     container: document.getElementById('cy'),
                     elements: graph.nodes.concat(graph.edges),
@@ -73,11 +74,28 @@
                                 'text-margin-y': -10,
                                 'font-size': 10,
                             }
+                        },
+                        {
+                            selector: 'node[label="l"]',
+                            style: {
+                                'background-color': '#ffcccb', 
+                                'width': 10,
+                                'height': 10,
+                                'shape': 'ellipse'
+                            }
+                        },
+                        {
+                            selector: 'edge[label=""]',
+                            style: {
+                                'line-color': 'transparent',
+                                'width': 3,
+                                'target-arrow-shape': 'none',
+                                'line-opacity': 0
+                            }
                         }
                     ],
                     layout: {
-                        name: 'grid',
-                        rows: Math.ceil(Math.sqrt(elements.length)),
+                        name: 'preset',
                     }
                 });
             })
@@ -101,7 +119,7 @@
             }
             return result;
         }
-
+        
         function parseInput(input, num_vars, elements) {
             let values = input.substring(16, num_vars * 2 + 14);
             console.log(values);
@@ -113,20 +131,71 @@
             console.log(bonds);
             
             let nodes = [];
+            let edges = [];
+            let lonePairCounter = 0;
+
+            let centerX = 250;
+            let centerY = 250;
+
+            nodes.push({
+                data: {
+                    id: elements[0],
+                    label: elements[0]
+                },
+                position: {
+                    x: centerX,
+                    y: centerY
+                }
+            });
+
+            let bondAngle = 2 * Math.PI / (elements.length);
+
             for (let i = 0; i < elements.length; i++) {
+                let angle = i * bondAngle/2;
+                let x = centerX + 120 * Math.cos(angle);
+                let y = centerY + 120 * Math.sin(angle);
+
                 nodes.push({
                     data: {
                         id: elements[i],
-                        label: `${elements[i]} (${lonePairs[i]} Lone Pairs)`
+                        label: elements[i]
                     },
                     position: {
-                        x: 100 + i * 100,
-                        y: 200
+                        x: x,
+                        y: y
                     }
                 });
+
+                let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
+                for (let j = 0; j < lonePairs[i]; j++) {
+                    let angle = j * lonePairAngleStep; 
+                    let offsetX = 20 * Math.cos(angle); 
+                    let offsetY = 20 * Math.sin(angle);
+
+                    const lonePairID = `lonePair-${lonePairCounter++}`;
+
+                    nodes.push({
+                        data: {
+                            id: lonePairID,
+                            label: "l"
+                        },
+                        position: {
+                            x: centerX + offsetX,
+                            y: centerY + offsetY
+                        }
+                    });
+
+                    edges.push({
+                        data: {
+                            source: elements[i],
+                            target: lonePairID,
+                            label: '',
+                        }
+                    });
+                }
             }
+                
             console.log(nodes);
-            let edges = [];
             let bondIndex = 0;
             for (let i = 0; i < elements.length; i++) {
                 for (let j = i + 1; j < elements.length; j++) {
@@ -145,6 +214,22 @@
             }
             console.log(edges);
             return { nodes, edges };
+        }
+
+        function getBondAngle(bonds, lonePairs){
+            if (bonds == 2 && lonePairs == 0){
+                return Math.PI;
+            } else if (bonds == 3 && lonePairs == 0){
+                return (120 * Math.PI) / 180;
+            } else if (bonds == 2 && lonePairs >= 1){
+                return (104.5 * Math.PI) / 180;
+            } else if (bonds == 4 && lonePairs == 0){
+                return (109.5 * Math.PI) / 180;
+            } else if (bonds == 3 && lonePairs == 1){
+                return (107 * Math.PI) / 180;
+            }
+
+            return (90 * Math.PI) /180;
         }
     </script>    
 </body>

@@ -39,10 +39,12 @@ newSplit.insert(0, newSplit.pop(newSplit.index(central)))
 print(newSplit)
 
 #gets valence of each element
+totalVal = 0
 valence = []
 for element in newSplit:
     if element in valence_electrons:
         valence.append(valence_electrons[element])
+        totalVal += valence_electrons[element]
     else:
         raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.")
 print(valence)
@@ -105,11 +107,23 @@ with open("model_temp.wcsp", "w+") as f:
             else:
                 f.write("8\n")
             counter += 1
+        #has to equal total valence count
+        f.write(f"{num_vars} ")
+        for i in range (num_vars):
+            f.write(f"{i} ")
+        f.write(f"-1 wsum hard 10 == {totalVal}\n")
+        #bonds to central can't be 0
         index = length
         while index < length + (length - 1):
             f.write(f"1 {index} 0 1\n0 10\n")
             counter += 1
             index += 1
+        #formal charge calculation
+        for i, element in enumerate(newSplit):
+            tvalence = valence_electrons[element]
+            lone_pair_var = i
+            bond_vars = matrix[i]
+            f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
     else:
         for i in range (length, num_vars):
             f.write(f"1 {i} 10 1\n0 0\n")
