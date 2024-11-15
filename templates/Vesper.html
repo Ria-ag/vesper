@@ -1,24 +1,114 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vesper</title>
     <script src="{{ url_for('static', filename='cytoscape.min.js') }}"></script>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #1b1b2f;
+          color: #e0e0e0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0;
+          height: 100vh;
+        }
+        
+        .container {
+          display: flex;
+          gap: 2rem;
+          background-color: #162447;
+          padding: 2rem;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          width: 90%;
+          height: 90%;
+          margin: auto;
+          align-items: center;
+        }
+        
+        .form-container, .output-container {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        h1 {
+          font-size: 64px;
+          margin: 0;
+          color: #e43f5a;
+        }
+        
+        label {
+          margin-top: 1rem;
+          font-weight: bold;
+        }
+        
+        input{
+          padding: 0.5rem;
+          margin-top: 0.5rem;
+          border-radius: 5px;
+          border: none;
+          background-color: #1f4068;
+          color: #e0e0e0;
+        }
+        
+        button {
+          padding: 0.7rem;
+          margin-top: 1.5rem;
+          border-radius: 5px;
+          border: none;
+          background-color: #e43f5a;
+          color: #e0e0e0;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+        
+        button:hover {
+          background-color: #d33a57;
+        }
+        
+        .output-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding-top: 1rem;
+          padding-left: 4rem;
+        }
+        
+        #cy {
+            width: 500px;
+            height: 500px;
+            border: 2px solid #4b86e4;
+            margin-top: 20px;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+      </style>
 </head>
 <body>
-    <h1>Vesper</h1>
-    <form id="wcspForm">
-        <label for="inp">Molecule name (eg. H2O, NaCl):</label>
-        <input type="text" id="inp" name="inp" required>
-        <br>
-        <label for="type">Is it covalent or ionic?:</label>
-        <input type="text" id="type" name="type" required>
-        <br>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="output"></div>
-    <div id="cy" style="width: 300px; height: 300px; border: 1px solid black; display: block"></div>
+    <div class = "container">
+        <div class = "form-container">
+            <h1>VSEPR</h1>
+            <p>Welcome to VSEPR</p>
+            <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. <br> Try it out!</p>
+            <form id="wcspForm">
+                <label for="inp">Molecule name (eg. H2O, NaCl):</label>
+                <input type="text" id="inp" name="inp" required>
+                <br>
+                <label for="type">Bond type:</label>
+                <input type="text" id="type" name="type" required>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+        <div class = "output-container">
+            <div id="output"> </div>
+            <div id="cy" ></div>
+        </div>
+    </div>
     <script>
         document.getElementById('wcspForm').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -148,10 +238,12 @@
                 }
             });
 
-            let bondAngle = 2 * Math.PI / (elements.length);
+            let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            console.log(bondAngle);
 
             for (let i = 0; i < elements.length; i++) {
-                let angle = i * bondAngle/2;
+                let angle = i * bondAngle;
+                console.log(angle)
                 let x = centerX + 120 * Math.cos(angle);
                 let y = centerY + 120 * Math.sin(angle);
 
@@ -217,6 +309,8 @@
         }
 
         function getBondAngle(bonds, lonePairs){
+            console.log(bonds);
+            console.log(lonePairs);
             if (bonds == 2 && lonePairs == 0){
                 return Math.PI;
             } else if (bonds == 3 && lonePairs == 0){
@@ -227,6 +321,8 @@
                 return (109.5 * Math.PI) / 180;
             } else if (bonds == 3 && lonePairs == 1){
                 return (107 * Math.PI) / 180;
+            } else if (bonds == 2 && lonePairs == 2){
+                return(104.9 * Math.PI) /180;
             }
 
             return (90 * Math.PI) /180;

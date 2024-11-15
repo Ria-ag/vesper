@@ -12,7 +12,7 @@ CORS(app)
 def createWCSPFile(inp, type):
     # dictionary for valence electrons
     valence_electrons = {
-        'H': 1, 'He': 2, 'O': 6, 'C': 4, 'N': 5, 'Na': 1, 'Cl': 7, 'S': 6, 'P': 5,
+        'H': 1, 'He': 2, 'O': 6, 'C': 4, 'N': 5, 'Na': 1, 'Cl': 7, 'S': 6, 'P': 5, 'B': 3, 'F': 7,
         # add more elements as needed
     }
 
@@ -40,10 +40,12 @@ def createWCSPFile(inp, type):
     newSplit.insert(0, newSplit.pop(newSplit.index(central)))
 
     #gets valence of each element
+    totalVal = 0
     valence = []
     for element in newSplit:
         if element in valence_electrons:
             valence.append(valence_electrons[element])
+            totalVal += valence_electrons[element]
         else:
             raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.")
 
@@ -91,7 +93,7 @@ def createWCSPFile(inp, type):
         #add constraints for bonds according to molecule type
         counter = 0
         if type == "covalent":
-            #constraint for 2*bonds is var
+             #constraint for 2*bonds is var
             for i in range (length, num_vars):
                 f.write(f"1 {i} 0 3\n1 10\n3 10\n5 10\n")
                 counter += 1
@@ -103,11 +105,23 @@ def createWCSPFile(inp, type):
                 else:
                     f.write("8\n")
                 counter += 1
+            #has to equal total valence count
+            f.write(f"{num_vars} ")
+            for i in range (num_vars):
+                f.write(f"{i} ")
+            f.write(f"-1 wsum hard 10 == {totalVal}\n")
+            #bonds to central can't be 0
             index = length
             while index < length + (length - 1):
                 f.write(f"1 {index} 0 1\n0 10\n")
                 counter += 1
                 index += 1
+            #formal charge calculation
+            for i, element in enumerate(newSplit):
+                tvalence = valence_electrons[element]
+                lone_pair_var = i
+                bond_vars = matrix[i]
+                f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
         else:
             for i in range (length, num_vars):
                 f.write(f"1 {i} 10 1\n0 0\n")
