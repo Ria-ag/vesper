@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vesper</title>
     <script src="{{ url_for('static', filename='cytoscape.min.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='cytoscape-avsdf.js') }}"></script> -->
     <script src="{{ url_for('static', filename='interact.min.js') }}"></script>
     <style>
         body {
@@ -15,7 +16,6 @@
           align-items: center;
           justify-content: center;
           margin: 0;
-          height: 100vh;
         }
         
         .container {
@@ -29,6 +29,17 @@
           height: 90%;
           margin: auto;
           align-items: center;
+          overflow-x: hidden;
+          overflow-y: auto;
+          flex-direction: column;
+          user-select: none;
+        }
+
+        .top-row{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 2rem;
         }
         
         .form-container, .output-container {
@@ -40,6 +51,7 @@
           font-size: 64px;
           margin: 0;
           color: #e43f5a;
+          margin-top: 12rem;
         }
         
         label {
@@ -78,9 +90,10 @@
           align-items: center;
           padding-top: 1rem;
           padding-left: 4rem;
+          margin-top: 4rem;
         }
         
-        #cy {
+        .cy {
             width: 500px;
             height: 500px;
             border: 2px solid #4b86e4;
@@ -89,9 +102,14 @@
             background-color: #ffffff;
         }
 
+        .bottom-row {
+            display: flex;
+            gap: 2rem;
+        }
+
         .toolbox-container {
             flex: 1;
-            height: 600px;
+            height: 500px;
             padding: 1 rem;
             background-color: #1f4068;
             border-radius: 10px;
@@ -100,11 +118,12 @@
             flex-direction: column;
             align-items: center;
             overflow: hidden;
+            margin-top: 4rem;
         }
 
         .draggable {
-            width: 80px;
-            height: 80px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background-color: #61bffc;
             color: #000;
@@ -129,42 +148,64 @@
             overflow-y: auto;
             padding: 10px;
         }
+
+        #lonePair{
+            width: 10px;
+            height: 10px;
+            background-color: #ffcccb;
+        }
       </style>
 </head>
 <body>
     <div class = "container">
-        <div class = "form-container">
-            <h1>VSEPR</h1>
-            <p>Welcome to VSEPR</p>
-            <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. <br> Try it out!</p>
-            <form id="wcspForm">
-                <label for="inp">Molecule name (eg. H2O, NaCl):</label>
-                <input type="text" id="inp" name="inp" required>
-                <br>
-                <label for="type">Bond type:</label>
-                <input type="text" id="type" name="type" required>
-                <button type="submit">Submit</button>
-            </form>
+        <div class = "top-row">
+            <div class = "form-container">
+                <h1>VSEPR</h1>
+                <p>Welcome to VSEPR</p>
+                <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. <br> Try it out!</p>
+                <form id="wcspForm">
+                    <label for="inp">Molecule name (eg. H2O, NaCl):</label>
+                    <input type="text" id="inp" name="inp" required>
+                    <br>
+                    <label for="type">Bond type:</label>
+                    <input type="text" id="type" name="type" required>
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+            <div class = "output-container">
+                <div id="output"> </div>
+                <div class = "cy" id="lcy" ></div>
+            </div>
         </div>
-        <div class = "output-container">
-            <div id="output"> </div>
-            <div id="cy" ></div>
-            <button id="undoButton">Undo</button>
-        </div>
-        <div class = "toolbox-container">
-            <h2>Toolbox</h2>
-                <input type="text" id="searchBar" placeholder="Search...">
-                <div class="toolbox"></div>
-                <!-- <div class = "draggable" id = "H" data-type="H">H</div>
-                <div class = "draggable" id = "O" data-type="O">O</div>
-                <div class = "draggable" id = "C",data-type="C">C</div>
-                <div class = "draggable" id = "N" data-type="N">N</div> -->
+        <div class = "bottom-row">
+            <div class = "output-container">
+                <div class = "cy" id="mcy" ></div>
+                <button id="undoButton">Undo</button>
+                <label for="try">Model attempted:</label>
+                <form id="checkForm">
+                    <label for="inp">Model attempted:</label>
+                    <input type="text" id="inp" name="inp" required>
+                    <br>
+                    <label for="type">Bond type:</label>
+                    <input type="text" id="type" name="type" required>
+                    <button type="check">Check</button>
+                </form>
+                <div id="checkOutput"></div>
+            </div>
+            <div class = "toolbox-container">
+                <h2>Toolbox</h2>
+                    <input type="text" id="searchBar" placeholder="Search...">
+                    <div class="toolbox"></div>
+                    <div class = "draggable" id="lonePair" data-type="lonePair">l</div>
+                    <!-- <div class = "draggable" id = "H" data-type="H">H</div> -->
+            </div>
         </div>
     </div>
 
     <script>
         document.getElementById('wcspForm').addEventListener('submit', function(event) {
             event.preventDefault();
+            // cytoscape.use( avsdf );
             const formData = new FormData(this);
             fetch('/run_code', {
                 method: 'POST',
@@ -187,7 +228,7 @@
                 const graph = parseInput(input, num_vars, elements);
                 
                 var cy = cytoscape({
-                    container: document.getElementById('cy'),
+                    container: document.getElementById('lcy'),
                     elements: graph.nodes.concat(graph.edges),
                     style: [
                         {
@@ -238,7 +279,7 @@
                         }
                     ],
                     layout: {
-                        name: 'preset',
+                        name: 'preset',      
                     }
                 });
             })
@@ -277,19 +318,9 @@
             let edges = [];
             let lonePairCounter = 0;
 
-            let centerX = 250;
+            let centerX = 450;
             let centerY = 250;
-
-            nodes.push({
-                data: {
-                    id: elements[0],
-                    label: elements[0]
-                },
-                position: {
-                    x: centerX,
-                    y: centerY
-                }
-            });
+            //fix spacing for multi central atom, right now stacked on top of each other
 
             let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
             console.log(bondAngle);
@@ -297,8 +328,8 @@
             for (let i = 0; i < elements.length; i++) {
                 let angle = i * bondAngle;
                 console.log(angle)
-                let x = centerX + 120 * Math.cos(angle);
-                let y = centerY + 120 * Math.sin(angle);
+                let x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
+                let y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
 
                 nodes.push({
                     data: {
@@ -316,8 +347,9 @@
                     let angle = j * lonePairAngleStep; 
                     let offsetX = 20 * Math.cos(angle); 
                     let offsetY = 20 * Math.sin(angle);
+                    lonePairCounter++;
 
-                    const lonePairID = `lonePair-${lonePairCounter++}`;
+                    const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
 
                     nodes.push({
                         data: {
@@ -382,10 +414,10 @@
         }
 
         //need cytoscape running at all times so putting it again here for now?
-        counter = 0;
+        const idCounts = {};
         const actionHistory = [];
         const cy = cytoscape({
-            container: document.getElementById('cy'),
+            container: document.getElementById('mcy'),
             elements: [],
             style: [
                 {
@@ -411,89 +443,28 @@
                         'curve-style': 'bezier',
                     },
                 },
+                {
+                            selector: 'node[label="l"]',
+                            style: {
+                                'background-color': '#ffcccb', 
+                                'width': 10,
+                                'height': 10,
+                                'shape': 'ellipse'
+                            }
+                        },
+                        {
+                            selector: 'edge[label=""]',
+                            style: {
+                                'line-color': 'transparent',
+                                'width': 3,
+                                'target-arrow-shape': 'none',
+                                'line-opacity': 0
+                            }
+                        }
             ],
             layout: {
                 name: 'preset',
             },
-        });
-
-        interact('.draggable').draggable({
-            inertia: true,
-            listeners: {
-                move: dragMoveListener,
-                end (event) {
-                    const element = event.target;
-                    element.removeAttribute('data-x');
-                    element.removeAttribute('data-y');
-                    element.style.transform = 'translate(0, 0)';
-                }
-            }
-        })
-
-        function dragMoveListener(event) {
-            const target = event.target;
-            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-
-            target.style.transform = `translate(${x}px, ${y}px)`;
-            target.setAttribute('data-x', x);
-            target.setAttribute('data-y', y);
-        }
-
-        interact('#cy').dropzone({
-            accept: '.draggable',
-            ondrop: function (event) {
-                const cyRect = document.getElementById('cy').getBoundingClientRect();
-                const element = event.relatedTarget;
-                const id = `${element.id}_${counter++}`;
-
-                cy.add({
-                    data: { id, label: element.id },
-                    position: {
-                        x: event.dragEvent.clientX - cyRect.left,
-                        y: event.dragEvent.clientY - cyRect.top,
-                    },
-                });
-                actionHistory.push({action: 'addNode', id: id});
-            },
-        });
-
-        let selectedNode = null;
-
-        cy.on('tap', 'node', function (evt) {
-            const node = evt.target;
-
-            if (!selectedNode) {
-                selectedNode = node;
-                node.style('background-color', '#ff5733');
-            } else {
-                cy.add({
-                    group: 'edges',
-                    data: {
-                        id: `${selectedNode.id()}_${node.id()}`,
-                        source: selectedNode.id(),
-                        target: node.id(),
-                    },
-                });
-                
-                actionHistory.push({action: 'addEdge', id: `${selectedNode.id()}_${node.id()}`});
-                selectedNode.style('background-color', '#61bffc');
-                selectedNode = null;
-            }
-        });
-
-        cy.on('tap', function (event) {
-            if (event.target === cy && selectedNode) {
-                selectedNode.style('background-color', '#61bffc');
-                selectedNode = null;
-            }
-        });
-
-        document.getElementById("undoButton").addEventListener("click", ()=> {
-            if (actionHistory.length > 0){
-                const lastAction = actionHistory.pop();
-                cy.remove(cy.getElementById(lastAction.id));
-            }
         });
 
         let allElements = [];
@@ -507,23 +478,202 @@
             .catch(error => console.error('Error loading toolbox:', error));
 
             function displayElements(elements){
+                document.querySelector('.toolbox').innerHTML = "";
                 elements.forEach(element => {
                     const div = document.createElement("div");
                     div.classList.add("draggable");
                     div.id = element.symbol;
-                    div.textContext = element.symbol;
+                    div.textContent = div.id;
                     div.setAttribute("data-type", element.symbol);
                     document.querySelector('.toolbox').appendChild(div);
+                    initializeDrag();
                 });
             }
-                
+
             document.getElementById("searchBar").addEventListener("input", () =>{
                     const search = searchBar.value.toLowerCase();
                     const filteredElements = allElements.filter(el =>
-                        el.name.toLowerCase().includes(search)
+                        el.name.toLowerCase().startsWith(search)
                     );
                     displayElements(filteredElements);
             });
-    </script>    
+
+            function initializeDrag(){
+                interact('.draggable').draggable({
+                    inertia: true,
+                    modifiers: [
+                        interact.modifiers.restrictRect({
+                        restriction: document.body, 
+                        endOnly: true 
+                        })
+                    ],
+                    listeners: {
+                        move: dragMoveListener,
+                        end (event) {
+                            const element = event.target;
+                            element.removeAttribute('data-x');
+                            element.removeAttribute('data-y');
+                            element.style.transform = 'translate(0, 0)';
+                        }
+                    }
+                })
+            }
+
+            function dragMoveListener(event) {
+                const target = event.target;
+                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                target.style.transform = `translate(${x}px, ${y}px)`;
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
+            }
+
+            initializeDrag();
+
+            interact('#mcy').dropzone({
+                accept: '.draggable',
+                ondrop: function (event) {
+                    const cyRect = document.getElementById('mcy').getBoundingClientRect();
+                    const element = event.relatedTarget;
+                    const baseId = element.id;
+
+                    if (!idCounts[baseId]){
+                        idCounts[baseId] = 1;
+                    } else {
+                        idCounts[baseId] += 1;
+                    }
+                    console.log(idCounts);
+                    const id = idCounts[baseId] > 1 ? `${baseId}${idCounts[baseId]}` : baseId;
+
+                    cy.add({
+                        data: { id, label: id.includes("lonePair") ? "l" : element.id },
+                        position: {
+                            x: event.dragEvent.clientX - cyRect.left,
+                            y: event.dragEvent.clientY - cyRect.top,
+                        },
+                    });
+                    actionHistory.push({action: 'addNode', id: id});
+                },
+            });
+
+            let selectedNode = null;
+
+            cy.on('tap', 'node', function (evt) {
+                const node = evt.target;
+
+                if (!selectedNode) {
+                    selectedNode = node;
+                    node.style('background-color', '#ff5733');
+                } else {
+                    cy.add({
+                        group: 'edges',
+                        data: {
+                            id: `${selectedNode.id()}_${node.id()}`,
+                            source: selectedNode.id(),
+                            target: node.id(),
+                            label: node.id().includes("lonePair") ? '' : null
+                        },
+                    });
+                    
+                    actionHistory.push({action: 'addEdge', id: `${selectedNode.id()}_${node.id()}`});
+                    selectedNode.style('background-color', '#61bffc');
+                    selectedNode = null;
+                }
+            });
+
+            cy.on('tap', function (event) {
+                if (event.target === cy && selectedNode) {
+                    selectedNode.style('background-color', '#61bffc');
+                    selectedNode = null;
+                }
+            });
+
+            document.getElementById("undoButton").addEventListener("click", ()=> {
+                if (actionHistory.length > 0){
+                    const lastAction = actionHistory.pop();
+                    cy.remove(cy.getElementById(lastAction.id));
+                }
+            });
+
+            document.getElementById("checkForm").addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                fetch('/run_code', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data =>{
+                    const num_vars = data.num_vars;
+                    const input = data.output;
+                    const elements = renameDuplicates(data.elements);
+                    const graph = parseInput(input, num_vars, elements);
+                    const theirGraph = getCytoscapeGraph();
+                    const validation = validateGraph(theirGraph, graph);
+                    document.getElementById('checkOutput').textContent = validation
+                        ? 'Graph matches the expected model!'
+                        : 'Graph does not match the expected model.';
+                })
+            });
+
+            function validateGraph(theirGraph, graph) {
+                const nodesMatch = validateNodes(theirGraph.nodes, graph.nodes);
+                const edgesMatch = validateEdges(theirGraph.edges, graph.edges);
+                const anglesMatch = validateAngles(theirGraph.nodes, theirGraph.edges, graph.angles);
+
+                return nodesMatch && edgesMatch && anglesMatch;
+            }
+
+            function validateNodes(nodes, expectedNodes) {
+                console.log(nodes);
+                console.log(expectedNodes);
+                if (nodes.length !== expectedNodes.length) return false;
+                const nodeIds = nodes.map(node => node.id);
+                console.log(nodeIds);
+                console.log(expectedNodes.every(expected => nodeIds.includes(expected.data.id)));
+                return expectedNodes.every(expected => nodeIds.includes(expected.data.id));
+            }
+
+            function validateEdges(edges, expectedEdges) {
+                console.log(edges);
+                console.log(expectedEdges);
+                if (edges.length !== expectedEdges.length) return false;
+                const edgePairs = edges.map(edge => `${edge.source}-${edge.target}`);
+                const expectedPairs = expectedEdges.map(expected => `${expected.data.source}-${expected.data.target}`);
+                console.log(edgePairs);
+                console.log(expectedPairs);
+                return expectedPairs.every(pair => edgePairs.includes(pair));
+            }
+
+            function validateAngles(nodes, edges, expectedAngle) {
+                return true;
+            }
+
+            function getCytoscapeGraph(){
+                const nodes = cy.nodes().map(node => ({
+                    id: node.data('id'),
+                    label: node.data('label'),
+                    position: node.position()
+                }));
+
+                const edges = cy.edges().map(edge => ({
+                    source: edge.data('source'),
+                    target: edge.data('target'),
+                    label: edge.data('label')
+                }));
+
+                return { nodes, edges };
+            }
+        
+    </script>  
 </body>
 </html>

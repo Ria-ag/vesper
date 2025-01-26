@@ -5,6 +5,7 @@ import numpy as np
 from flask_cors import CORS
 from itertools import combinations
 from flask import Flask, request, render_template, jsonify
+from chemlib import Element
 
 app = Flask(__name__)
 CORS(app)
@@ -13,7 +14,10 @@ def createWCSPFile(inp, type):
     # dictionary for valence electrons
     valence_electrons = {
         'H': 1, 'He': 2, 'O': 6, 'C': 4, 'N': 5, 'Na': 1, 'Cl': 7, 'S': 6, 'P': 5, 'B': 3, 'F': 7,
-        # add more elements as needed
+        # replace this eventually with pulling this data from library
+    }
+    electronegativities = {
+        'H': 2.20, 'He': None, 'O': 3.44, 'C': 2.55, 'N': 3.04, 'Na': 0.93, 'Cl': 3.16, 'S': 2.58, 'P': 2.19, 'B': 2.04, 'F': 3.98,
     }
 
     #generates list of  numbers
@@ -35,11 +39,44 @@ def createWCSPFile(inp, type):
             count = int(count)
         newSplit.extend([element] * count)
 
-    #rearranges so central is first
-    central = min(newSplit, key=newSplit.count)
-    newSplit.insert(0, newSplit.pop(newSplit.index(central)))
+    #gets electronegativity of each element
+    electronegativity = []
+    for element in newSplit:
+        # valence.append(Element(element).properties["Valence"])
+        # totalVal += Element(element).properties["Valence"]
+        # electronegativity.append(Element(element).properties.get("Electronegativity", float("inf")))
+        # if element in valence_electrons:
+        #     valence.append(valence_electrons[element])
+        #     totalVal += valence_electrons[element]
+        # else:
+        #     raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.") #will not need once replaced with library
+        if element in electronegativities:
+            electronegativity.append(electronegativities[element])
+        else:
+            raise ValueError(f"Unknown element {element}. Please add it to the electronegativities dictionary.") #will not need once replaced with library
+        
+    #find central atoms
+    excluded = {"H", "F", "Cl", "Br", "I"}
+    indexx = 0
+    finalIndex = 0
+    minElec = float("inf")
+    for indexx, element in enumerate(newSplit):
+        if element not in excluded and electronegativity[indexx] < minElec:
+            minElec = electronegativity[indexx]
+            finalIndex = indexx
+        indexx += 1
 
-    #gets valence of each element
+    central = []
+    noncentral = []
+    for element in newSplit:
+        if element == newSplit[finalIndex]:
+            central.append(element)
+        else:
+            noncentral.append(element)
+
+    newSplit = central + noncentral
+
+     #gets valence of each element
     totalVal = 0
     valence = []
     for element in newSplit:
@@ -47,7 +84,7 @@ def createWCSPFile(inp, type):
             valence.append(valence_electrons[element])
             totalVal += valence_electrons[element]
         else:
-            raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.")
+            raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.") #will not need once replaced with library
 
     #creates a file
     with open("model_temp.wcsp", "w+") as f:
@@ -110,18 +147,43 @@ def createWCSPFile(inp, type):
             for i in range (num_vars):
                 f.write(f"{i} ")
             f.write(f"-1 wsum hard 10 == {totalVal}\n")
-            #bonds to central can't be 0
-            index = length
-            while index < length + (length - 1):
-                f.write(f"1 {index} 0 1\n0 10\n")
-                counter += 1
-                index += 1
+            counter += 1
+            #central atom chain
+            indexxx = length
+            k = len(central)
+            if k > 1:
+               for i in range(len(central) - 1):
+                    f.write(f"1 {indexxx} 0 1\n0 10\n")
+                    indexxx += k
+                    k -= 1
+                    counter += 1
+            else:
+                #bonds to central can't be 0
+                index = length
+                while index < length + (length - 1):
+                    f.write(f"1 {index} 0 1\n0 10\n")
+                    counter += 1
+                    index += 1
+            #each must bond to at least one central atom
+            index = length + len(central) - 1
+            if len(central) > 1:
+                for i in range(len(noncentral)):
+                    f.write(f"{len(central)} ")
+                    for j in range(len(central)):
+                        constraintIndex = (index + (len(noncentral) * j))
+                        if (j > 0 and len(central) > 2):
+                            constraintIndex += 1
+                        f.write(f"{constraintIndex} ")
+                    f.write(f"-1 wsum hard 10 > 0\n")
+                    index += 1
+                    counter += 1
             #formal charge calculation
             for i, element in enumerate(newSplit):
                 tvalence = valence_electrons[element]
                 lone_pair_var = i
                 bond_vars = matrix[i]
                 f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
+                counter += 1
         else:
             for i in range (length, num_vars):
                 f.write(f"1 {i} 10 1\n0 0\n")
