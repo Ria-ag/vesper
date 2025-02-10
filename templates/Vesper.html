@@ -331,6 +331,11 @@
                 let x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
                 let y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
 
+                if (elements[i].substring(0, 1) === elements[0] && i != 0) {
+                    x = centerX + i * 100;
+                    y = centerY;
+                }
+
                 nodes.push({
                     data: {
                         id: elements[i],
