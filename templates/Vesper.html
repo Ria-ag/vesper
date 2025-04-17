@@ -5,148 +5,153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vesper</title>
     <script src="{{ url_for('static', filename='cytoscape.min.js') }}"></script>
-    <!-- <script src="{{ url_for('static', filename='cytoscape-avsdf.js') }}"></script> -->
     <script src="{{ url_for('static', filename='interact.min.js') }}"></script>
     <style>
         body {
-          font-family: Arial, sans-serif;
-          background-color: #1b1b2f;
-          color: #e0e0e0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: #f1f5f9;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
-        
+      
         .container {
+            background: transparent;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 1300px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+      
+        .top-row, .bottom-row {
           display: flex;
+          flex-wrap: wrap;
           gap: 2rem;
-          background-color: #162447;
-          padding: 2rem;
-          border-radius: 10px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          width: 90%;
-          height: 90%;
-          margin: auto;
-          align-items: center;
-          overflow-x: hidden;
-          overflow-y: auto;
-          flex-direction: column;
-          user-select: none;
+          justify-content: space-between;
         }
-
-        .top-row{
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 2rem;
-        }
-        
-        .form-container, .output-container {
-          display: flex;
-          flex-direction: column;
-        }
-        
+      
         h1 {
-          font-size: 64px;
-          margin: 0;
-          color: #e43f5a;
-          margin-top: 12rem;
+          font-size: 3rem;
+          color: #38bdf8;
+          margin-bottom: 0.5rem;
         }
-        
+      
+        .form-container {
+          flex: 1;
+          min-width: 300px;
+        }
+      
+        .form-container p {
+          color: #cbd5e1;
+          font-size: 1rem;
+          margin: 0.5rem 0;
+        }
+      
         label {
+          font-weight: 600;
           margin-top: 1rem;
-          font-weight: bold;
+          display: block;
+          margin-bottom: 0.25rem;
         }
-        
-        input{
-          padding: 0.5rem;
-          margin-top: 0.5rem;
-          border-radius: 5px;
+      
+        input[type="text"] {
+          width: 100%;
+          padding: 0.75rem;
+          border-radius: 0.5rem;
           border: none;
-          background-color: #1f4068;
-          color: #e0e0e0;
+          background-color: #334155;
+          color: #f1f5f9;
+          margin-bottom: 1rem;
         }
-        
+      
         button {
-          padding: 0.7rem;
-          margin-top: 1.5rem;
-          border-radius: 5px;
+          padding: 0.75rem 1.5rem;
+          background-color: #38bdf8;
+          color: #0f172a;
+          font-weight: 600;
           border: none;
-          background-color: #e43f5a;
-          color: #e0e0e0;
-          font-weight: bold;
+          border-radius: 0.5rem;
           cursor: pointer;
-          transition: background-color 0.3s ease;
+          transition: 0.3s ease;
         }
-        
+      
         button:hover {
-          background-color: #d33a57;
+          background-color: #0ea5e9;
         }
-        
+      
         .output-container {
+          flex: 1;
+          min-width: 300px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding-top: 1rem;
-          padding-left: 4rem;
-          margin-top: 4rem;
+          gap: 1rem;
         }
-        
+      
         .cy {
-            width: 500px;
-            height: 500px;
-            border: 2px solid #4b86e4;
-            margin-top: 20px;
-            border-radius: 10px;
-            background-color: #ffffff;
-        }
-
-        .bottom-row {
-            display: flex;
-            gap: 2rem;
+          width: 100%;
+          max-width: 500px;
+          height: 500px;
+          border: 2px solid #38bdf8;
+          border-radius: 1rem;
+          background-color: #f8fafc;
         }
 
         .toolbox-container {
             flex: 1;
-            height: 500px;
-            padding: 1 rem;
-            background-color: #1f4068;
-            border-radius: 10px;
+            height: 800px;
+            /* width: 150px; */
             padding: 1rem;
+            background-color: #506172;
+            border-radius: 1rem;
+            gap: 1rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow: hidden;
-            margin-top: 4rem;
         }
 
         .draggable {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background-color: #61bffc;
-            color: #000;
+            background-color: #0ea5e9;
+            color: #fff;
             font-weight: bold;
             display: flex;
+            flex-shrink: 0;
             align-items: center;
             justify-content: center;
             cursor: grab;
-            margin: 10px 0;
         }
+
         #searchBar {
             width: 100%;
-            padding: 8px;
-            font-size: 16px;
+            padding: 0.5rem;
+            font-size: 1rem;
             border: none;
-            border-bottom: 1px solid #ccc;
-            outline: none;
+            border-radius: 0.5rem;
+            background-color: #1e293b;
+            color: #f1f5f9;
         }
 
         .toolbox {
-            flex: 1;
+            flex-direction: column;
             overflow-y: auto;
-            padding: 10px;
+            gap: 0.5rem;
+            display: flex;
+            padding-right: 0.5rem;
         }
 
         #lonePair{
@@ -154,28 +159,118 @@
             height: 10px;
             background-color: #ffcccb;
         }
+      
+        .periodic-table {
+          display: grid;
+          grid-template-columns: repeat(18, 1fr);
+          gap: 0.4rem;
+          margin-bottom: 1rem;
+        }
+      
+        .element {
+          width: 40px;
+          height: 40px;
+          background-color: #3b82f6;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0.375rem;
+          font-weight: 600;
+          transition: background-color 0.2s ease;
+        }
+      
+        .element:hover {
+          background-color: #2563eb;
+        }
+      
+        .element-buttons {
+          display: flex;
+          gap: 0.25rem;
+          justify-content: center;
+          align-items: center;
+        }
+      
+        .element-button {
+          width: 10px;
+          height: 10px;
+          background-color: #f43f5e;
+          color: #fff;
+          border-radius: 50%;
+          font-size: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .placeholder {
+            width: 40px;
+            height: 40px;
+            visibility: hidden;
+        }
+
+        .skewed {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: #0f172a;
+            z-index: 0;
+            transform: skewY(6deg);
+            transform-origin: top right;
+        }
+
+        #inp2, #type2 {
+            background-color: #506172;
+        }
+
+        #next{
+            display: none;
+        }
+
+        #back{
+            display: none;
+        }
       </style>
+      
 </head>
 <body>
+    <section>
+        <div class="skewed"></div>
+      </section>
     <div class = "container">
         <div class = "top-row">
             <div class = "form-container">
-                <h1>VSEPR</h1>
-                <p>Welcome to VSEPR</p>
+                <h1>The Lewis Playground</h1>
+                <p>Welcome to The Lewis Playground</p>
+                <br>
                 <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. <br> Try it out!</p>
+                <p>You can enter the molecule name here or use the buttons on the periodic table below</p>
                 <form id="wcspForm">
-                    <label for="inp">Molecule name (eg. H2O, NaCl):</label>
-                    <input type="text" id="inp" name="inp" required>
-                    <br>
                     <label for="type">Bond type:</label>
                     <input type="text" id="type" name="type" required>
+                    <label for="inp">Molecule name (eg. H2O, NaCl):</label>
+                    <input type="text" id="inp" name="inp" required>
                     <button type="submit">Submit</button>
                 </form>
             </div>
             <div class = "output-container">
                 <div id="output"> </div>
                 <div class = "cy" id="lcy" ></div>
+                <div>
+                    <button type="submit" id="next">Next</button>
+                    <button type="submit" id="back">Back</button>
+                </div>
             </div>
+        </div>
+        <div>
+            <div class = "periodic-table" id="periodicTable"></div>
+            <br>
+            <h1>Try It Yourself</h1>
         </div>
         <div class = "bottom-row">
             <div class = "output-container">
@@ -184,10 +279,10 @@
                 <label for="try">Model attempted:</label>
                 <form id="checkForm">
                     <label for="inp">Model attempted:</label>
-                    <input type="text" id="inp" name="inp" required>
+                    <input type="text" id="inp2" name="inp" required>
                     <br>
                     <label for="type">Bond type:</label>
-                    <input type="text" id="type" name="type" required>
+                    <input type="text" id="type2" name="type" required>
                     <button type="check">Check</button>
                 </form>
                 <div id="checkOutput"></div>
@@ -197,16 +292,19 @@
                     <input type="text" id="searchBar" placeholder="Search...">
                     <div class="toolbox"></div>
                     <div class = "draggable" id="lonePair" data-type="lonePair">l</div>
-                    <!-- <div class = "draggable" id = "H" data-type="H">H</div> -->
             </div>
         </div>
+        <div id="moleculeInfo"></div>
     </div>
 
     <script>
         document.getElementById('wcspForm').addEventListener('submit', function(event) {
             event.preventDefault();
-            // cytoscape.use( avsdf );
             const formData = new FormData(this);
+            const moleculeName = formData.get('inp');
+            fetchMoleculeInfo(moleculeName);
+            document.getElementById('output').textContent = ''; // Reset output for each new submission
+            document.querySelectorAll('.output-container .cy:not(#mcy):not(#lcy)').forEach(div => div.remove()); // Remove dynamically created graph divs except mcy and lcy
             fetch('/run_code', {
                 method: 'POST',
                 body: formData,
@@ -221,69 +319,136 @@
                 return response.json();
             })
             .then(data => {
-                document.getElementById('output').textContent = 'Output: ' + data.output;
+                console.log('Data received from server:', data);
+                if (!data || !data.elements || !data.output) {
+                    throw new Error('Invalid data received from server');
+                }
                 const num_vars = data.num_vars;
-                const input = data.output;
+                const outputString = String(data.output);
+                const outputs = outputString.match(/(\d+ solution\(0\):\s+[\d\s]+)/g);
                 const elements = renameDuplicates(data.elements);
-                const graph = parseInput(input, num_vars, elements);
+                const central = data.centrals;
+                let graphs = [];
+                let currentIndex = 0;
                 
-                var cy = cytoscape({
-                    container: document.getElementById('lcy'),
-                    elements: graph.nodes.concat(graph.edges),
-                    style: [
-                        {
-                            selector: 'node',
-                            style: {
-                                'label': 'data(label)',
-                                'background-color': '#61bffc',
-                                'text-valign': 'center',
-                                'text-halign': 'center',
-                                'shape': 'ellipse',
-                                'width': 40,
-                                'height': 40,
-                                'font-size': 12,
-                                'border-width': 2,
-                                'border-color': '#333'
-                            }
-                        },
-                        {
-                            selector: 'edge',
-                            style: {
-                                'label': 'data(label)',
-                                'line-color': '#ccc',
-                                'width': 3,
-                                'target-arrow-shape': 'triangle',
-                                'target-arrow-color': '#ccc',
-                                'curve-style': 'bezier',
-                                'text-margin-y': -10,
-                                'font-size': 10,
-                            }
-                        },
-                        {
-                            selector: 'node[label="l"]',
-                            style: {
-                                'background-color': '#ffcccb', 
-                                'width': 10,
-                                'height': 10,
-                                'shape': 'ellipse'
-                            }
-                        },
-                        {
-                            selector: 'edge[label=""]',
-                            style: {
-                                'line-color': 'transparent',
-                                'width': 3,
-                                'target-arrow-shape': 'none',
-                                'line-opacity': 0
-                            }
-                        }
-                    ],
-                    layout: {
-                        name: 'preset',      
+                outputs.slice(0, 3).forEach((output, index) => {
+                    const input = output.match(/solution\(0\):\s+([\d\s]+)/)[1];
+                    // document.getElementById('output').textContent += `Solution ${index + 1}: ${output}\n`;
+                    text = `Solution ${index + 1}: ${output}\n`;
+                    console.log(text);
+                    console.log('Parsed input:', input);
+                    let graph;
+                    console.log('Elements:', elements);
+                    if (central == 1){
+                        graph = parseInputOG(input, num_vars, elements);
+                    } else {
+                        graph = parseInputNew(input, num_vars, elements, central);
                     }
+                    graphs.push(graph);
                 });
+
+                if (graphs.length > 1){
+                    document.getElementById('next').style.display = "inline";
+                    document.getElementById('back').style.display = "inline";
+                }
+
+                function updateGraph(){
+                    const container = document.getElementById('lcy');
+                    var cy = cytoscape({
+                        container: container,
+                        elements: graphs[currentIndex].nodes.concat(graphs[currentIndex].edges),
+                        style: [
+                            {
+                                selector: 'node',
+                                style: {
+                                    'label': 'data(label)',
+                                    'background-color': '#61bffc',
+                                    'text-valign': 'center',
+                                    'text-halign': 'center',
+                                    'shape': 'ellipse',
+                                    'width': 40,
+                                    'height': 40,
+                                    'font-size': 12,
+                                    'border-width': 2,
+                                    'border-color': '#333'
+                                }
+                            },
+                            {
+                                selector: 'edge',
+                                style: {
+                                    'label': 'data(label)',
+                                    'line-color': '#ccc',
+                                    'width': 3,
+                                    'target-arrow-shape': 'triangle',
+                                    'target-arrow-color': '#ccc',
+                                    'curve-style': 'bezier',
+                                    'text-margin-y': -10,
+                                    'font-size': 10,
+                                }
+                            },
+                            {
+                                selector: 'node[label="l"]',
+                                style: {
+                                    'background-color': '#ffcccb', 
+                                    'width': 10,
+                                    'height': 10,
+                                    'shape': 'ellipse'
+                                }
+                            },
+                            {
+                                selector: 'edge[label=""]',
+                                style: {
+                                    'line-color': 'transparent',
+                                    'width': 3,
+                                    'target-arrow-shape': 'none',
+                                    'line-opacity': 0
+                                }
+                            }
+                        ],
+                        layout: {
+                            name: 'preset',      
+                        }
+                    });
+                    updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
+                }
+                    
+                // }
+
+                // graphs.forEach((graph, index) => {
+                //     const containerId = index === 0 ? 'lcy' : `lcy${index}`;
+                //     let container;
+                //     if (index === 0) {
+                //         container = document.getElementById(containerId);
+                //     } else {
+                //         container = document.createElement('div');
+                //         container.id = containerId;
+                //         container.className = 'cy';
+                //         document.querySelector('.output-container').appendChild(container);
+                //     }
+
+                //     if (container) {
+
+                    updateGraph();
+
+                    document.getElementById('next').addEventListener('click', function() {
+                        if (currentIndex < graphs.length - 1){
+                            currentIndex++;
+                            updateGraph();
+                        }
+                    });
+
+                    document.getElementById('back').addEventListener('click', function() {
+                        if (currentIndex > 0){
+                            currentIndex--;
+                            updateGraph();
+                        }
+                    });
+
+                // Store the first graph for validation
+                window.firstGraph = graphs[0];
             })
             .catch((error) => {
+                console.error('Error occurred:', error);
                 document.getElementById('output').textContent = 'Error: ' + error.message;
             });
         });
@@ -303,9 +468,9 @@
             }
             return result;
         }
-        
-        function parseInput(input, num_vars, elements) {
-            let values = input.substring(16, num_vars * 2 + 14);
+
+        function parseInputOG(input, num_vars, elements) {
+            let values = input.substring(0, num_vars*2);
             console.log(values);
             let numVals = values.split(' ').map(Number);
             console.log(numVals);
@@ -330,11 +495,6 @@
                 console.log(angle)
                 let x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
                 let y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
-
-                if (elements[i].substring(0, 1) === elements[0] && i != 0) {
-                    x = centerX + i * 100;
-                    y = centerY;
-                }
 
                 nodes.push({
                     data: {
@@ -397,6 +557,173 @@
             console.log(edges);
             return { nodes, edges };
         }
+        
+        function parseInputNew(input, num_vars, elements, central) {
+            let values = input.substring(0, num_vars * 2);
+            console.log(values);
+            let numVals = values.split(' ').map(Number);
+            console.log(numVals);
+            let lonePairs = numVals.slice(0, elements.length);
+            console.log(lonePairs);
+            let bonds = numVals.slice(elements.length);
+            console.log(bonds);
+            
+            let nodes = [];
+            let edges = [];
+            let lonePairCounter = 0;
+
+            let centerX = 450;
+            let centerY = 250;
+            let centers = [];
+            let lastCenter = 0;
+            let x = 0;
+            let y = 0;
+            let bondNum = 0;
+            let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+
+            for (let i = 0; i < elements.length; i++){
+                if (elements[i].substring(0, 1) === elements[0]) {
+                    x = centerX + i * (100) * (-1)**(i);
+                    if ((-1)**(i) > 0 && i != 0){
+                        x  -= 100;
+                    }
+                    y = centerY;
+                    centers.push(x);
+                    lastCenter ++;
+                }
+            }
+
+            for (let i = 0; i < elements.length; i++){
+                for(let j = lastCenter; j < elements.length; j++){
+                let bond = bonds[bondNum];
+                bondNum++;
+                if (bond > 0){
+                    centerX = centers[i];
+                    centers.push(centerX);
+                }  
+                }
+            }
+
+            for (let i = 0; i < elements.length; i++) {
+                let angle = i * bondAngle;
+                   
+                x = centers[i];
+                if (i > lastCenter){
+                    if (elements[i].substring(1) % 2 == 0){
+                        y = centerY - 100;
+                    } else if (elements[i].substring(1) % 2 == 1){
+                        y = centerY + 100;
+                    } else {
+                        y = centerY;
+                        x = x - 100;
+                    }
+                }
+                
+                console.log(lastCenter);
+                if (lastCenter == 0){
+                    x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
+                    y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
+                }
+
+                nodes.push({
+                    data: {
+                        id: elements[i],
+                        label: elements[i]
+                    },
+                    position: {
+                        x: x,
+                        y: y
+                    }
+                });
+
+                let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
+                for (let j = 0; j < lonePairs[i]; j++) {
+                    let angle = j * lonePairAngleStep; 
+                    let offsetX = 20 * Math.cos(angle); 
+                    let offsetY = 20 * Math.sin(angle);
+                    lonePairCounter++;
+
+                    const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
+
+                    nodes.push({
+                        data: {
+                            id: lonePairID,
+                            label: "l"
+                        },
+                        position: {
+                            x: centerX + offsetX,
+                            y: centerY + offsetY
+                        }
+                    });
+
+                    edges.push({
+                        data: {
+                            source: elements[i],
+                            target: lonePairID,
+                            label: '',
+                        }
+                    });
+                }
+            }
+                
+            console.log(nodes);
+            let bondIndex = 0;
+            for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                    let bond = bonds[bondIndex];
+                    bondIndex++;
+                    if (bond > 0) {
+                        edges.push({
+                            data: {
+                                source: elements[i],
+                                target: elements[j],
+                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
+                            }
+                        });
+                    }
+                }
+            }
+            console.log(edges);
+            return { nodes, edges, centers, lastCenter, bonds };
+        }
+
+        function updateNodePositions(cy, elements, centers, lastCenter, bonds) {
+            console.log('Updating node positions');
+            console.log('Elements:', elements);
+            console.log('Centers:', centers);
+            console.log('Last Center:', lastCenter);
+            console.log('Bonds:', bonds);
+
+            if (!centers || !lastCenter || !bonds) {
+                console.error('Invalid data for updating node positions');
+                return;
+            }
+
+            let bondVar = 0;
+            for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                    let bond = bonds[bondVar];
+                    bondVar++;
+                    if (bond > 0){
+                        if (j > lastCenter - 1) {
+                            const element = cy.getElementById(elements[j]);
+                            if (!element) {
+                                console.error(`Element with id ${elements[j]} not found`);
+                                continue;
+                            }
+                            element.position({
+                                x: centers[i]
+                            });
+                            if (elements[j].length == 1){
+                                element.position({
+                                    x: centers[i] - 100
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         function getBondAngle(bonds, lonePairs){
             console.log(bonds);
@@ -418,7 +745,6 @@
             return (90 * Math.PI) /180;
         }
 
-        //need cytoscape running at all times so putting it again here for now?
         const idCounts = {};
         const actionHistory = [];
         const cy = cytoscape({
@@ -479,206 +805,329 @@
             .then(data => {
                 allElements = data;
                 displayElements(allElements);
+                createPeriodicTable();
             })
-            .catch(error => console.error('Error loading toolbox:', error));
+            .catch(error => console.error('Error loading toolbox or periodic table:', error));
 
-            function displayElements(elements){
-                document.querySelector('.toolbox').innerHTML = "";
-                elements.forEach(element => {
+        function displayElements(elements){
+            document.querySelector('.toolbox').innerHTML = "";
+            elements.forEach(element => {
+                const div = document.createElement("div");
+                div.classList.add("draggable");
+                div.id = element.symbol;
+                div.textContent = div.id;
+                div.setAttribute("data-type", element.symbol);
+                document.querySelector('.toolbox').appendChild(div);
+                initializeDrag();
+            });
+        }
+
+        document.getElementById("searchBar").addEventListener("input", () =>{
+                const search = searchBar.value.toLowerCase();
+                const filteredElements = allElements.filter(el =>
+                    el.name.toLowerCase().startsWith(search)
+                );
+                displayElements(filteredElements);
+        });
+
+        function initializeDrag(){
+            interact('.draggable').draggable({
+                inertia: true,
+                modifiers: [
+                    interact.modifiers.restrictRect({
+                    restriction: document.body, 
+                    endOnly: true 
+                    })
+                ],
+                listeners: {
+                    move: dragMoveListener,
+                    end (event) {
+                        const element = event.target;
+                        element.removeAttribute('data-x');
+                        element.removeAttribute('data-y');
+                        element.style.transform = 'translate(0, 0)';
+                    }
+                }
+            })
+        }
+
+        function dragMoveListener(event) {
+            const target = event.target;
+            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+            target.style.transform = `translate(${x}px, ${y}px)`;
+            target.setAttribute('data-x', x);
+            target.setAttribute('data-y', y);
+        }
+
+        initializeDrag();
+
+        interact('#mcy').dropzone({
+            accept: '.draggable',
+            ondrop: function (event) {
+                const cyRect = document.getElementById('mcy').getBoundingClientRect();
+                const element = event.relatedTarget;
+                const baseId = element.id;
+
+                if (!idCounts[baseId]){
+                    idCounts[baseId] = 1;
+                } else {
+                    idCounts[baseId] += 1;
+                }
+                console.log(idCounts);
+                const id = idCounts[baseId] > 1 ? `${baseId}${idCounts[baseId]}` : baseId;
+
+                cy.add({
+                    data: { id, label: id.includes("lonePair") ? "l" : element.id },
+                    position: {
+                        x: event.dragEvent.clientX - cyRect.left,
+                        y: event.dragEvent.clientY - cyRect.top,
+                    },
+                });
+                actionHistory.push({action: 'addNode', id: id});
+            },
+        });
+
+        let selectedNode = null;
+
+        cy.on('tap', 'node', function (evt) {
+            const node = evt.target;
+
+            if (!selectedNode) {
+                selectedNode = node;
+                node.style('background-color', '#ff5733');
+            } else {
+                cy.add({
+                    group: 'edges',
+                    data: {
+                        id: `${selectedNode.id()}_${node.id()}`,
+                        source: selectedNode.id(),
+                        target: node.id(),
+                        label: node.id().includes("lonePair") ? '' : null
+                    },
+                });
+                
+                actionHistory.push({action: 'addEdge', id: `${selectedNode.id()}_${node.id()}`});
+                selectedNode.style('background-color', '#61bffc');
+                selectedNode = null;
+            }
+        });
+
+        cy.on('tap', function (event) {
+            if (event.target === cy && selectedNode) {
+                selectedNode.style('background-color', '#61bffc');
+                selectedNode = null;
+            }
+        });
+
+        document.getElementById("undoButton").addEventListener("click", ()=> {
+            if (actionHistory.length > 0){
+                const lastAction = actionHistory.pop();
+                cy.remove(cy.getElementById(lastAction.id));
+            }
+        });
+
+        document.getElementById("checkForm").addEventListener('submit', function (event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const moleculeName = formData.get('inp');
+            fetchMoleculeInfo(moleculeName);
+            fetch('/run_code', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const num_vars = data.num_vars;
+                const outputString = String(data.output);
+                const central = data.centrals;
+                const elements = renameDuplicates(data.elements);
+                const outputs = outputString.match(/(\d+ solution\(0\):\s+[\d\s]+)/g);
+                const input = outputs[0].match(/solution\(0\):\s+([\d\s]+)/)[1]; // Extract the first solution input
+                if (central == 1){
+                    graph = parseInputOG(input, num_vars, elements);
+                } else {
+                    graph = parseInputNew(input, num_vars, elements, central);
+                }
+                const theirGraph = getCytoscapeGraph();
+                const validation = validateGraph(theirGraph, graph);
+                document.getElementById('checkOutput').textContent = validation
+                    ? 'Graph matches the expected model!'
+                    : 'Graph does not match the expected model.';
+            })
+            .catch(error => {
+                console.error('Error occurred:', error);
+                document.getElementById('checkOutput').textContent = 'Error: ' + error.message;
+            });
+        });
+
+        function validateGraph(theirGraph, graph) {
+            const nodesMatch = validateNodes(theirGraph.nodes, graph.nodes);
+            const edgesMatch = validateEdges(theirGraph.edges, graph.edges);
+
+            return nodesMatch && edgesMatch;
+        }
+
+        function validateNodes(nodes, expectedNodes) {
+            console.log(nodes);
+            console.log(expectedNodes);
+            if (nodes.length !== expectedNodes.length) return false;
+            const nodeIds = nodes.map(node => node.id);
+            console.log(nodeIds);
+            console.log(expectedNodes.every(expected => nodeIds.includes(expected.data.id)));
+            return expectedNodes.every(expected => nodeIds.includes(expected.data.id));
+        }
+
+        function validateEdges(edges, expectedEdges) {
+            console.log(edges);
+            console.log(expectedEdges);
+            if (edges.length !== expectedEdges.length) return false;
+            const edgePairs = edges.map(edge => `${edge.source}-${edge.target}`);
+            const expectedPairs = expectedEdges.map(expected => `${expected.data.source}-${expected.data.target}`);
+            console.log(edgePairs);
+            console.log(expectedPairs);
+            return expectedPairs.every(pair => edgePairs.includes(pair));
+        }
+
+        function getCytoscapeGraph() {
+            const nodes = cy.nodes().map(node => ({
+                id: node.data('id'),
+                label: node.data('label'),
+                position: node.position()
+            }));
+
+            const edges = cy.edges().map(edge => ({
+                source: edge.data('source'),
+                target: edge.data('target'),
+                label: edge.data('label')
+            }));
+
+            return { nodes, edges };
+        }
+
+        const periodicTableData = [
+            ["H", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "He"],
+            ["Li", "Be", "", "", "", "", "", "", "", "", "", "", "B", "C", "N", "O", "F", "Ne"],
+            ["Na", "Mg", "", "", "", "", "", "", "", "", "", "", "Al", "Si", "P", "S", "Cl", "Ar"],
+            ["K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr"],
+            ["Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe"],
+            ["Cs", "Ba", "", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn"],
+            ["Fr", "Ra", "", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"],
+            ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", ""],
+            ["", "", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", ""]
+        ];
+
+        function createPeriodicTable() {
+            const periodicTable = document.getElementById("periodicTable");
+            periodicTable.innerHTML = "";
+            periodicTableData.forEach((row, rowIndex) => {
+                row.forEach((symbol, colIndex) => {
+                    if (symbol === ""){
+                        const placeholder = document.createElement("div");
+                        placeholder.classList.add("placeholder");
+                        placeholder.style.gridColumn = colIndex + 1;
+                        periodicTable.appendChild(placeholder);
+                        return;
+                    }
                     const div = document.createElement("div");
-                    div.classList.add("draggable");
-                    div.id = element.symbol;
-                    div.textContent = div.id;
-                    div.setAttribute("data-type", element.symbol);
-                    document.querySelector('.toolbox').appendChild(div);
-                    initializeDrag();
+                    div.classList.add("element");
+                    div.id = symbol;
+                    div.style.gridColumn = colIndex + 1;
+                    div.innerHTML = `
+                        <div>
+                            <div class="element-buttons">
+                                <div class="element-button" data-action="add">+</div>
+                                <div class="element-button" data-action="subtract">-</div>
+                            </div>
+                            <div>${symbol}</div>
+                        </div>
+                    `;
+                    periodicTable.appendChild(div);
+                })
+            })
+        }
+
+        document.getElementById("periodicTable").addEventListener("click", function(event) {
+            if (event.target.classList.contains("element-button")) {
+                const elementSymbol = event.target.closest('.element').id;
+                const action = event.target.dataset.action;
+                updateInput(elementSymbol, action);
+            } else if (event.target.classList.contains("element")) {
+                const elementSymbol = event.target.id;
+                updateInput(elementSymbol, "add");
+            }
+        });
+
+        function updateInput(elementSymbol, action) {
+            const input = document.getElementById("inp");
+            let value = input.value;
+            const regex = new RegExp(`(${elementSymbol})(\\d*)`);
+            const match = value.match(regex);
+
+            if (action === "add") {
+                if (match) {
+                    const count = parseInt(match[2] || "1") + 1;
+                    value = value.replace(regex, `${elementSymbol}${count}`);
+                } else {
+                    value += elementSymbol;
+                }
+            } else if (action === "subtract") {
+                if (match) {
+                    const count = parseInt(match[2] || "1") - 1;
+                    if (count > 1) {
+                        value = value.replace(regex, `${elementSymbol}${count}`);
+                    } else if (count === 1) {
+                        value = value.replace(regex, elementSymbol);
+                    } else {
+                        value = value.replace(regex, "");
+                    }
+                }
+            }
+
+            input.value = value;
+        }
+
+        function fetchMoleculeInfo(molecule) {
+            fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${molecule}/JSON`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.PC_Compounds || data.PC_Compounds.length === 0) {
+                        throw new Error('No compound data found');
+                    }
+                    const compound = data.PC_Compounds[0];
+
+                    const getProperty = (label) => {
+                        const property = compound.props.find(prop => prop.urn.label === label);
+                        return property ? property.value.sval || property.value.fval || "N/A" : "N/A";
+                    };
+
+                    const molecularFormula = getProperty("Molecular Formula");
+                    const molecularWeight = getProperty("Molecular Weight");
+                    const iupacName = getProperty("IUPAC Name");
+                    
+                    document.getElementById('moleculeInfo').innerHTML = `
+                        <h3>Molecule Information</h3>
+                        <p><strong>Molecular Formula:</strong> ${molecularFormula}</p>
+                        <p><strong>Molecular Weight:</strong> ${molecularWeight} g/mol</p>
+                        <p><strong>IUPAC Name:</strong> ${iupacName}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching molecule info:', error);
+                    document.getElementById('moleculeInfo').textContent = 'Error fetching molecule info: ' + error.message;
                 });
             }
 
-            document.getElementById("searchBar").addEventListener("input", () =>{
-                    const search = searchBar.value.toLowerCase();
-                    const filteredElements = allElements.filter(el =>
-                        el.name.toLowerCase().startsWith(search)
-                    );
-                    displayElements(filteredElements);
-            });
-
-            function initializeDrag(){
-                interact('.draggable').draggable({
-                    inertia: true,
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                        restriction: document.body, 
-                        endOnly: true 
-                        })
-                    ],
-                    listeners: {
-                        move: dragMoveListener,
-                        end (event) {
-                            const element = event.target;
-                            element.removeAttribute('data-x');
-                            element.removeAttribute('data-y');
-                            element.style.transform = 'translate(0, 0)';
-                        }
-                    }
-                })
-            }
-
-            function dragMoveListener(event) {
-                const target = event.target;
-                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-
-                target.style.transform = `translate(${x}px, ${y}px)`;
-                target.setAttribute('data-x', x);
-                target.setAttribute('data-y', y);
-            }
-
-            initializeDrag();
-
-            interact('#mcy').dropzone({
-                accept: '.draggable',
-                ondrop: function (event) {
-                    const cyRect = document.getElementById('mcy').getBoundingClientRect();
-                    const element = event.relatedTarget;
-                    const baseId = element.id;
-
-                    if (!idCounts[baseId]){
-                        idCounts[baseId] = 1;
-                    } else {
-                        idCounts[baseId] += 1;
-                    }
-                    console.log(idCounts);
-                    const id = idCounts[baseId] > 1 ? `${baseId}${idCounts[baseId]}` : baseId;
-
-                    cy.add({
-                        data: { id, label: id.includes("lonePair") ? "l" : element.id },
-                        position: {
-                            x: event.dragEvent.clientX - cyRect.left,
-                            y: event.dragEvent.clientY - cyRect.top,
-                        },
-                    });
-                    actionHistory.push({action: 'addNode', id: id});
-                },
-            });
-
-            let selectedNode = null;
-
-            cy.on('tap', 'node', function (evt) {
-                const node = evt.target;
-
-                if (!selectedNode) {
-                    selectedNode = node;
-                    node.style('background-color', '#ff5733');
-                } else {
-                    cy.add({
-                        group: 'edges',
-                        data: {
-                            id: `${selectedNode.id()}_${node.id()}`,
-                            source: selectedNode.id(),
-                            target: node.id(),
-                            label: node.id().includes("lonePair") ? '' : null
-                        },
-                    });
-                    
-                    actionHistory.push({action: 'addEdge', id: `${selectedNode.id()}_${node.id()}`});
-                    selectedNode.style('background-color', '#61bffc');
-                    selectedNode = null;
-                }
-            });
-
-            cy.on('tap', function (event) {
-                if (event.target === cy && selectedNode) {
-                    selectedNode.style('background-color', '#61bffc');
-                    selectedNode = null;
-                }
-            });
-
-            document.getElementById("undoButton").addEventListener("click", ()=> {
-                if (actionHistory.length > 0){
-                    const lastAction = actionHistory.pop();
-                    cy.remove(cy.getElementById(lastAction.id));
-                }
-            });
-
-            document.getElementById("checkForm").addEventListener('submit', function (event) {
-                event.preventDefault();
-                const formData = new FormData(this);
-                fetch('/run_code', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data =>{
-                    const num_vars = data.num_vars;
-                    const input = data.output;
-                    const elements = renameDuplicates(data.elements);
-                    const graph = parseInput(input, num_vars, elements);
-                    const theirGraph = getCytoscapeGraph();
-                    const validation = validateGraph(theirGraph, graph);
-                    document.getElementById('checkOutput').textContent = validation
-                        ? 'Graph matches the expected model!'
-                        : 'Graph does not match the expected model.';
-                })
-            });
-
-            function validateGraph(theirGraph, graph) {
-                const nodesMatch = validateNodes(theirGraph.nodes, graph.nodes);
-                const edgesMatch = validateEdges(theirGraph.edges, graph.edges);
-                const anglesMatch = validateAngles(theirGraph.nodes, theirGraph.edges, graph.angles);
-
-                return nodesMatch && edgesMatch && anglesMatch;
-            }
-
-            function validateNodes(nodes, expectedNodes) {
-                console.log(nodes);
-                console.log(expectedNodes);
-                if (nodes.length !== expectedNodes.length) return false;
-                const nodeIds = nodes.map(node => node.id);
-                console.log(nodeIds);
-                console.log(expectedNodes.every(expected => nodeIds.includes(expected.data.id)));
-                return expectedNodes.every(expected => nodeIds.includes(expected.data.id));
-            }
-
-            function validateEdges(edges, expectedEdges) {
-                console.log(edges);
-                console.log(expectedEdges);
-                if (edges.length !== expectedEdges.length) return false;
-                const edgePairs = edges.map(edge => `${edge.source}-${edge.target}`);
-                const expectedPairs = expectedEdges.map(expected => `${expected.data.source}-${expected.data.target}`);
-                console.log(edgePairs);
-                console.log(expectedPairs);
-                return expectedPairs.every(pair => edgePairs.includes(pair));
-            }
-
-            function validateAngles(nodes, edges, expectedAngle) {
-                return true;
-            }
-
-            function getCytoscapeGraph(){
-                const nodes = cy.nodes().map(node => ({
-                    id: node.data('id'),
-                    label: node.data('label'),
-                    position: node.position()
-                }));
-
-                const edges = cy.edges().map(edge => ({
-                    source: edge.data('source'),
-                    target: edge.data('target'),
-                    label: edge.data('label')
-                }));
-
-                return { nodes, edges };
-            }
-        
     </script>  
 </body>
 </html>

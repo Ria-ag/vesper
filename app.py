@@ -59,10 +59,12 @@ def createWCSPFile(inp, type):
     excluded = {"H", "F", "Cl", "Br", "I"}
     indexx = 0
     finalIndex = 0
+    potentialCenrals = []
     minElec = float("inf")
     for indexx, element in enumerate(newSplit):
         if element not in excluded and electronegativity[indexx] < minElec:
             minElec = electronegativity[indexx]
+            potentialCentral = [index]
             finalIndex = indexx
         indexx += 1
 
@@ -184,6 +186,19 @@ def createWCSPFile(inp, type):
                 bond_vars = matrix[i]
                 f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
                 counter += 1
+            #Huckel's rule
+            #maintain density
+            #carbon should have 4 bonds
+            #constraint for lone pairs to harm the molecule
+            for i in range (length):
+                f.write(f"1 {i} 10 1\n0 0\n")
+            #Hydrogen prefers bonding to Oxygen
+            # if "O" and "H" in newSplit:
+            #     for i in range (length):
+            #         if newSplit[i] == "H":
+            #             f.write(f"1 {i} 10 1\n0 0\n")
+            #             counter += 1
+
         else:
             for i in range (length, num_vars):
                 f.write(f"1 {i} 10 1\n0 0\n")
@@ -209,7 +224,9 @@ def createWCSPFile(inp, type):
     os.remove("model_temp.wcsp")
     print("WCSP model written to 'model.wcsp'.")
 
-    return "model.wcsp", num_vars, newSplit
+    centrals = len(central)
+
+    return "model.wcsp", num_vars, newSplit, centrals
 
 #route to render the html page
 @app.route('/')
@@ -223,23 +240,22 @@ def run_code():
     type = request.form['type']
     
     #run og python code to generate wcsp file
-    wcspFilePath, num_vars, newSplit = createWCSPFile(inp, type)
+    wcspFilePath, num_vars, newSplit, centrals = createWCSPFile(inp, type)
 
     #ssh into the instance and run toulbar2
     ssh_command = f"toulbar2 model.wcsp -s -a"
     ssh_result = subprocess.run(ssh_command, shell=True, capture_output=True, text=True)
 
-    #parse output to get solution
+    #parse output to get all solutions
     output = ssh_result.stdout.splitlines()
-    solution = None
+    solutions = []
     for line in output:
         if "solution" in line:
-            solution = line.strip()
-            break
+            solutions.append(line.strip())
 
     #return or error
-    if solution:
-        return jsonify({'output': solution, 'num_vars': num_vars, 'elements': newSplit})
+    if solutions:
+        return jsonify({'output': solutions, 'num_vars': num_vars, 'elements': newSplit, 'centrals': centrals})
     else:
         return jsonify({'output': 'Solution not found'}), 500
     
