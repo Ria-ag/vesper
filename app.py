@@ -64,7 +64,7 @@ def createWCSPFile(inp, type):
     for indexx, element in enumerate(newSplit):
         if element not in excluded and electronegativity[indexx] < minElec:
             minElec = electronegativity[indexx]
-            potentialCentral = [index]
+            potentialCentral = [indexx]
             finalIndex = indexx
         indexx += 1
 
