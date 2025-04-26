@@ -12,6 +12,17 @@ electronegativities = {
     'H': 2.20, 'He': None, 'O': 3.44, 'C': 2.55, 'N': 3.04, 'Na': 0.93, 'Cl': 3.16, 'S': 2.58, 'P': 2.19, 'B': 2.04, 'F': 3.98,
 }
 
+ #formal charge calculation
+        #     for i, element in enumerate(newSplit):
+        #         tvalence = valence_electrons[element]
+        #         lone_pair_var = i
+        #         bond_vars = matrix[i]
+        #         f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
+        #         counter += 1
+            #Huckel's rule
+            #maintain density
+            #carbon should have 4 bonds
+
 #generates list of  numbers
 def generate_nums(max):
     return [num for num in range(0, max)]

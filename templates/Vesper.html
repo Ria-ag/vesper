@@ -6,6 +6,7 @@
     <title>Vesper</title>
     <script src="{{ url_for('static', filename='cytoscape.min.js') }}"></script>
     <script src="{{ url_for('static', filename='interact.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='3Dmol-min.js') }}"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -265,6 +266,7 @@
                     <button type="submit" id="back">Back</button>
                     <button type="submit" id="next">Next</button>
                 </div>
+                <div id="mol3d"></div>
             </div>
         </div>
         <div>
@@ -410,6 +412,7 @@
                         }
                     });
                     updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
+                    render3DMolecule(graphs[currentIndex].nodes, graphs[currentIndex].edges);
                 }
                     
                 // }
@@ -453,6 +456,34 @@
             });
         });
         
+        function render3DMolecule(nodes, edges) {
+            const viewer = $3Dmol.createViewer("mol3d", {
+                backgroundColor: "white"
+            });
+            viewer.clear();
+
+            // Filter out lone pairs
+            const atomNodes = nodes.filter(n => n.data.label !== 'l');
+            
+            // Build XYZ string
+            const xyzAtoms = atomNodes.map(n => {
+                const label = n.data.label.replace(/\d+$/, '');
+                const x = n.position.x / 100;
+                const y = n.position.y / 100;
+                const z = 0; // Flat molecule
+                return `${label} ${x} ${y} ${z}`;
+            });
+
+            const xyzData = `${xyzAtoms.length}\nGenerated from graph\n` + xyzAtoms.join('\n');
+
+            // Load into viewer
+            viewer.addModel(xyzData, "xyz");
+            viewer.setStyle({}, {stick: {}, sphere: {scale: 0.3}});
+            viewer.zoomTo();
+            viewer.render();
+        }
+
+
         function renameDuplicates(list) {
             const result = [];
             const counts = {};
@@ -510,8 +541,8 @@
                 let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
                 for (let j = 0; j < lonePairs[i]; j++) {
                     let angle = j * lonePairAngleStep; 
-                    let offsetX = 20 * Math.cos(angle); 
-                    let offsetY = 20 * Math.sin(angle);
+                    let offsetX = i == 0 ? 20 * Math.cos(angle) : 140 * Math.cos(angle); 
+                    let offsetY = i == 0 ? 20 * Math.sin(angle): 140 * Math.sin(angle);
                     lonePairCounter++;
 
                     const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';

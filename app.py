@@ -10,7 +10,7 @@ from chemlib import Element
 app = Flask(__name__)
 CORS(app)
 
-def createWCSPFile(inp, type):
+def createWCSPFile(inp, btype):
     # dictionary for valence electrons
     valence_electrons = {
         'H': 1, 'He': 2, 'O': 6, 'C': 4, 'N': 5, 'Na': 1, 'Cl': 7, 'S': 6, 'P': 5, 'B': 3, 'F': 7,
@@ -42,14 +42,6 @@ def createWCSPFile(inp, type):
     #gets electronegativity of each element
     electronegativity = []
     for element in newSplit:
-        # valence.append(Element(element).properties["Valence"])
-        # totalVal += Element(element).properties["Valence"]
-        # electronegativity.append(Element(element).properties.get("Electronegativity", float("inf")))
-        # if element in valence_electrons:
-        #     valence.append(valence_electrons[element])
-        #     totalVal += valence_electrons[element]
-        # else:
-        #     raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.") #will not need once replaced with library
         if element in electronegativities:
             electronegativity.append(electronegativities[element])
         else:
@@ -96,12 +88,12 @@ def createWCSPFile(inp, type):
         combos = generate_pattern(nums)
         num_vars = length + len(combos) 
         f.write(f"Model {num_vars} 9 x 10\n")
-        type = type.lower()
+        btype = btype.lower()
 
         #writes variable domains
         domain = ""
         for i in valence:
-            if type == "ionic" and i > 4:
+            if btype == "ionic" and i > 4:
                 f.write("9 ")
                 domain += "9"
             else:
@@ -131,7 +123,7 @@ def createWCSPFile(inp, type):
 
         #add constraints for bonds according to molecule type
         counter = 0
-        if type == "covalent":
+        if btype == "covalent":
              #constraint for 2*bonds is var
             for i in range (length, num_vars):
                 f.write(f"1 {i} 0 3\n1 10\n3 10\n5 10\n")
@@ -159,13 +151,6 @@ def createWCSPFile(inp, type):
                     indexxx += k
                     k -= 1
                     counter += 1
-            else:
-                #bonds to central can't be 0
-                index = length
-                while index < length + (length - 1):
-                    f.write(f"1 {index} 0 1\n0 10\n")
-                    counter += 1
-                    index += 1
             #each must bond to at least one central atom
             index = length + len(central) - 1
             if len(central) > 1:
@@ -179,25 +164,22 @@ def createWCSPFile(inp, type):
                     f.write(f"-1 wsum hard 10 > 0\n")
                     index += 1
                     counter += 1
-            #formal charge calculation
-            for i, element in enumerate(newSplit):
-                tvalence = valence_electrons[element]
-                lone_pair_var = i
-                bond_vars = matrix[i]
-                f.write(f"{len(bond_vars) +1} {lone_pair_var} {' '.join(map(str, bond_vars))} -1 wsum hard 10 == {tvalence + tvalence}\n")
-                counter += 1
-            #Huckel's rule
-            #maintain density
-            #carbon should have 4 bonds
             #constraint for lone pairs to harm the molecule
             for i in range (length):
                 f.write(f"1 {i} 10 1\n0 0\n")
-            #Hydrogen prefers bonding to Oxygen
-            # if "O" and "H" in newSplit:
-            #     for i in range (length):
-            #         if newSplit[i] == "H":
-            #             f.write(f"1 {i} 10 1\n0 0\n")
-            #             counter += 1
+            #Either bonded to O or a central atom
+            if k == 1:
+                HIndex = 0
+                OIndex = 0
+                for i in newSplit:
+                    if i == "O":
+                        OIndex = newSplit.index(i)
+                        if OIndex != 0:
+                            for i in newSplit:
+                                if i == "H":
+                                    HIndex = newSplit.index(i)
+                                    f.write(f"2 {matrix[HIndex][OIndex]} {matrix[OIndex][0]} -1 wsum hard 10 != 0\n")
+                                    counter += 1
 
         else:
             for i in range (length, num_vars):
@@ -237,10 +219,10 @@ def index():
 @app.route('/run_code', methods=['POST'])
 def run_code():
     inp = request.form['inp']
-    type = request.form['type']
+    btype = request.form['type']
     
     #run og python code to generate wcsp file
-    wcspFilePath, num_vars, newSplit, centrals = createWCSPFile(inp, type)
+    wcspFilePath, num_vars, newSplit, centrals = createWCSPFile(inp, btype)
 
     #ssh into the instance and run toulbar2
     ssh_command = f"toulbar2 model.wcsp -s -a"
