@@ -99,7 +99,7 @@
           align-items: center;
           gap: 1rem;
         }
-      
+
         .cy {
           width: 100%;
           max-width: 500px;
@@ -236,6 +236,17 @@
         #back{
             display: none;
         }
+
+        #mol3d{
+            width: 500px;
+            height: 500px;
+            position: relative;
+            display: none;
+            border: 2px solid #38bdf8;
+            border-radius: 1rem;
+            background-color: #f8fafc;
+            overflow: hidden; 
+        }
       </style>
       
 </head>
@@ -261,12 +272,15 @@
             </div>
             <div class = "output-container">
                 <div id="output"> </div>
+                <div id="view-toggle-buttons">
+                    <button id="toggleView">Switch to 3d View</button>
+                </div>
                 <div class = "cy" id="lcy" ></div>
+                <div id="mol3d"></div>
                 <div>
                     <button type="submit" id="back">Back</button>
                     <button type="submit" id="next">Next</button>
                 </div>
-                <div id="mol3d"></div>
             </div>
         </div>
         <div>
@@ -412,24 +426,7 @@
                         }
                     });
                     updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
-                    render3DMolecule(graphs[currentIndex].nodes, graphs[currentIndex].edges);
                 }
-                    
-                // }
-
-                // graphs.forEach((graph, index) => {
-                //     const containerId = index === 0 ? 'lcy' : `lcy${index}`;
-                //     let container;
-                //     if (index === 0) {
-                //         container = document.getElementById(containerId);
-                //     } else {
-                //         container = document.createElement('div');
-                //         container.id = containerId;
-                //         container.className = 'cy';
-                //         document.querySelector('.output-container').appendChild(container);
-                //     }
-
-                //     if (container) {
 
                     updateGraph();
 
@@ -447,6 +444,25 @@
                         }
                     });
 
+                    let is3DView = false;
+                    document.getElementById("toggleView").addEventListener("click", ()=> {
+                        const cyDiv = document.getElementById("lcy");
+                        const molDiv = document.getElementById("mol3d");
+                        const toggleBtn = document.getElementById("toggleView");
+                        if (is3DView) {
+                            molDiv.style.display = "none";
+                            cyDiv.style.display = "block";
+                            toggleBtn.textContent = "Switch to 3D View";
+                        } else {
+                            cyDiv.style.display = "none";
+                            molDiv.style.display = "block";
+                            render3DMolecule(graphs[currentIndex].nodes, graphs[currentIndex].edges);
+                            toggleBtn.textContent = "Switch to 2D View";
+                        }
+
+                        is3DView = !is3DView;
+                    })
+
                 // Store the first graph for validation
                 window.firstGraph = graphs[0];
             })
@@ -456,27 +472,25 @@
             });
         });
         
+
         function render3DMolecule(nodes, edges) {
             const viewer = $3Dmol.createViewer("mol3d", {
                 backgroundColor: "white"
             });
             viewer.clear();
 
-            // Filter out lone pairs
             const atomNodes = nodes.filter(n => n.data.label !== 'l');
             
-            // Build XYZ string
             const xyzAtoms = atomNodes.map(n => {
                 const label = n.data.label.replace(/\d+$/, '');
                 const x = n.position.x / 100;
                 const y = n.position.y / 100;
-                const z = 0; // Flat molecule
+                const z = 0;
                 return `${label} ${x} ${y} ${z}`;
             });
 
             const xyzData = `${xyzAtoms.length}\nGenerated from graph\n` + xyzAtoms.join('\n');
 
-            // Load into viewer
             viewer.addModel(xyzData, "xyz");
             viewer.setStyle({}, {stick: {}, sphere: {scale: 0.3}});
             viewer.zoomTo();

@@ -165,8 +165,8 @@ def createWCSPFile(inp, btype):
                     index += 1
                     counter += 1
             #constraint for lone pairs to harm the molecule
-            for i in range (length):
-                f.write(f"1 {i} 10 1\n0 0\n")
+            # for i in range (length):
+            #     f.write(f"1 {i} 10 1\n0 0\n")
             #Either bonded to O or a central atom
             if k == 1:
                 HIndex = 0
