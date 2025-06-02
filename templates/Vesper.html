@@ -319,8 +319,23 @@
             const formData = new FormData(this);
             const moleculeName = formData.get('inp');
             fetchMoleculeInfo(moleculeName);
+
             document.getElementById('output').textContent = ''; // Reset output for each new submission
             document.querySelectorAll('.output-container .cy:not(#mcy):not(#lcy)').forEach(div => div.remove()); // Remove dynamically created graph divs except mcy and lcy
+            let graphs = [];
+            let currentIndex = 0;
+            const nextBtn = document.getElementById('next');
+            const backBtn = document.getElementById('back');
+            const newNextBtn = nextBtn.cloneNode(true);
+            const newBackBtn = backBtn.cloneNode(true);
+            nextBtn.replaceWith(newNextBtn);
+            backBtn.replaceWith(newBackBtn);
+            newNextBtn.style.display = "none";
+            newBackBtn.style.display = "none";
+            document.getElementById("mol3d").style.display = "none";
+            document.getElementById("lcy").style.display = "block";
+            document.getElementById("toggleView").textContent = "Switch to 3D View";
+
             fetch('/run_code', {
                 method: 'POST',
                 body: formData,
@@ -363,10 +378,16 @@
                     graphs.push(graph);
                 });
 
+                // if (graphs.length > 1){
+                //     document.getElementById('next').style.display = "inline";
+                //     document.getElementById('back').style.display = "inline";
+                // }
+
                 if (graphs.length > 1){
-                    document.getElementById('next').style.display = "inline";
-                    document.getElementById('back').style.display = "inline";
+                    newNextBtn.style.display = "inline";
+                    newBackBtn.style.display = "inline";
                 }
+
 
                 function updateGraph(){
                     const container = document.getElementById('lcy');
@@ -426,25 +447,40 @@
                             name: 'preset',      
                         }
                     });
-                    updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
-                    graphs[currentIndex].nodes = overlap(graphs[currentIndex].nodes, graphs[currentIndex].centers);
+                    // updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
+                    // graphs[currentIndex].nodes = overlap(graphs[currentIndex].nodes, graphs[currentIndex].centers);
                 }
 
                     updateGraph();
 
-                    document.getElementById('next').addEventListener('click', function() {
+                    // document.getElementById('next').addEventListener('click', function() {
+                    //     if (currentIndex < graphs.length - 1){
+                    //         currentIndex++;
+                    //         updateGraph();
+                    //     }
+                    // });
+
+                    // document.getElementById('back').addEventListener('click', function() {
+                    //     if (currentIndex > 0){
+                    //         currentIndex--;
+                    //         updateGraph();
+                    //     }
+                    // });
+
+                    newNextBtn.addEventListener('click', function () {
                         if (currentIndex < graphs.length - 1){
                             currentIndex++;
                             updateGraph();
                         }
                     });
 
-                    document.getElementById('back').addEventListener('click', function() {
+                    newBackBtn.addEventListener('click', function () {
                         if (currentIndex > 0){
                             currentIndex--;
                             updateGraph();
                         }
                     });
+
 
                     let is3DView = false;
                     document.getElementById("toggleView").addEventListener("click", ()=> {
@@ -482,15 +518,23 @@
             viewer.clear();
 
             const atomNodes = nodes.filter(n => n.data.label !== 'l');
-            
+
             const xyzAtoms = atomNodes.map(n => {
-                const label = n.data.label.replace(/\d+$/, '');
+                let label = n.data.label;
+                if (typeof label !== 'string') {
+                    console.warn("Unexpected label type:", label, "in node", n);
+                    label = String(label); // or set a default like 'C'
+                }
+
+                label = label.replace(/\d+$/, '');
                 const x = n.position.x / 100;
                 const y = n.position.y / 100;
                 const z = 0;
                 return `${label} ${x} ${y} ${z}`;
             });
 
+            console.log("atomNodes", atomNodes);
+            
             const xyzData = `${xyzAtoms.length}\nGenerated from graph\n` + xyzAtoms.join('\n');
 
             viewer.addModel(xyzData, "xyz");
@@ -536,7 +580,19 @@
             let y = 0;
             //fix spacing for multi central atom, right now stacked on top of each other
 
-            let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            //let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            count = 0;
+            for (let i = 0; i < bonds.length; i++) {
+                if (bonds[i] > 0){
+                    count++;
+                }
+            }
+            for (let i = 0; i < lonePairs.length; i++) {
+                if (lonePairs[i] > 0){
+                    count++;
+                }
+            }
+            let bondAngle = (2 * Math.PI) / count;
             console.log(bondAngle);
 
             for (let i = 0; i < elements.length; i++) {
@@ -556,53 +612,24 @@
                     }
                 });
 
-                // let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
-                // for (let j = 0; j < lonePairs[i]; j++) {
-                //     let angle = j * lonePairAngleStep; 
-                //     let offsetX = i == 0 ? 20 * Math.cos(angle) : 140 * Math.cos(angle); 
-                //     let offsetY = i == 0 ? 20 * Math.sin(angle): 140 * Math.sin(angle);
-                //     lonePairCounter++;
-
-                //     const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
-                //     console.log("hi!");
-
-                //     nodes.push({
-                //         data: {
-                //             id: lonePairID,
-                //             label: "l"
-                //         },
-                //         position: {
-                //             x: centerX + offsetX,
-                //             y: centerY + offsetY
-                //         }
-                //     });
-
-                //     edges.push({
-                //         data: {
-                //             source: elements[i],
-                //             target: lonePairID,
-                //             label: '',
-                //         }
-                //     });
-                // }
-                const lonePairYOffsets = [25, 25, -25, -25];
-                const lonePairXOffsets = [-5, 10, -5, 10];
-
+                let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
                 for (let j = 0; j < lonePairs[i]; j++) {
+                    let angle = j * lonePairAngleStep; 
+                    let offsetX = i == 0 ? 20 * Math.cos(angle) : 140 * Math.cos(angle); 
+                    let offsetY = i == 0 ? 20 * Math.sin(angle): 140 * Math.sin(angle);
                     lonePairCounter++;
-                    const lonePairID = `lonePair${lonePairCounter}`;
 
-                    const offsetX = lonePairXOffsets[j % lonePairXOffsets.length];
-                    const offsetY = lonePairYOffsets[j % lonePairYOffsets.length];
+                    const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
+                    console.log("hi!");
 
                     nodes.push({
                         data: {
                             id: lonePairID,
-                            label: 'l'
+                            label: "l"
                         },
                         position: {
-                            x: x + offsetX,
-                            y: y + offsetY
+                            x: centerX + offsetX,
+                            y: centerY + offsetY
                         }
                     });
 
@@ -610,10 +637,39 @@
                         data: {
                             source: elements[i],
                             target: lonePairID,
-                            label: ''
+                            label: '',
                         }
                     });
                 }
+                // const lonePairYOffsets = [25, 25, -25, -25];
+                // const lonePairXOffsets = [-5, 10, -5, 10];
+
+                // for (let j = 0; j < lonePairs[i]; j++) {
+                //     lonePairCounter++;
+                //     const lonePairID = `lonePair${lonePairCounter}`;
+
+                //     const offsetX = lonePairXOffsets[j % lonePairXOffsets.length];
+                //     const offsetY = lonePairYOffsets[j % lonePairYOffsets.length];
+
+                //     nodes.push({
+                //         data: {
+                //             id: lonePairID,
+                //             label: 'l'
+                //         },
+                //         position: {
+                //             x: x + offsetX,
+                //             y: y + offsetY
+                //         }
+                //     });
+
+                //     edges.push({
+                //         data: {
+                //             source: elements[i],
+                //             target: lonePairID,
+                //             label: ''
+                //         }
+                //     });
+                // }
 
             }
                 
@@ -628,7 +684,7 @@
                             data: {
                                 source: elements[i],
                                 target: elements[j],
-                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Unknown Bond'
+                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : bonds === 6 ? 'Triple Bond' : 'Unknown Bond'
                             }
                         });
                     }
@@ -667,8 +723,9 @@
             let x = 0;
             let y = 0;
             let bondNum = 0;
-            let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            //let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
 
+            //placing central atoms
             for (let i = 0; i < elements.length; i++){
                 if (elements[i].substring(0, 1) === elements[0]) {
                     x = centerX + i * (100) * (-1)**(i);
@@ -678,145 +735,277 @@
                     y = centerY;
                     centers.push(x);
                     lastCenter ++;
+                    nodes.push({
+                        data: {
+                            id: elements[i],
+                            label: elements[i]
+                        },
+                        position: {
+                            x: x,
+                            y: y
+                        }
+                    });
                 }
             }
 
+            //figuring out which elements are bonded to which central atom
             for (let i = 0; i < elements.length; i++){
                 for(let j = lastCenter; j < elements.length; j++){
                 let bond = bonds[bondNum];
                 bondNum++;
-                if (bond > 0 && centers.length > 1){
+                if (bond > 0 && centers.length >= 1){
                     centerX = centers[i];
                     centers.push(centerX);
                 }  
                 }
             }
 
-            for (let i = 0; i < elements.length; i++) {
-                let angle = i * bondAngle;
-                   
-                x = centers[i];
-                if (i > lastCenter){
-                    if (elements[i].substring(1) % 2 == 0){
-                        y = centerY - 100;
-                    } else if (elements[i].substring(1) % 2 == 1){
-                        y = centerY + 100;
-                    } else {
-                        y = centerY;
-                        x = x - 100;
+            let centerBondMap = {};
+            let bondInd = 0;
+
+            for (let i = 0; i < lastCenter; i++) {
+                centerBondMap[i] = []; // center i
+                for (let j = lastCenter; j < elements.length; j++) {
+                    if (bonds[bondInd] > 0) {
+                        centerBondMap[i].push(j); // center i is bonded to element j
                     }
+                    bondInd++;
                 }
-                
-                console.log(lastCenter);
-                // if (lastCenter == 0){
-                //     x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
-                //     y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
-                // }
+            }
 
-                // let attempts = 0;
-                // let maxAttempts = 20;
+            for (let centerIdx = 0; centerIdx < lastCenter; centerIdx++) {
+                let bonded = centerBondMap[centerIdx];
+                let numBonds = bonded.length;
+                numBonds++;
+                let angleStep = (2 * Math.PI) / numBonds;
 
-                // while (positionOccupied(x, y, usedPositions) && attempts < maxAttempts) {
-                //     let dx = 0, dy = 0;
+                for (let k = 0; k < numBonds; k++) {
+                    let angle = k * angleStep;
+                    let bondedIdx = bonded[k];
 
-                //     switch (attempts % 4) {
-                //         case 0: dx = 100; dy = -100; break;
-                //         case 1: dx = 100; dy = 100; break;
-                //         case 2: dx = -100; dy = 100; break;
-                //         case 3: dx = -100; dy = -100; break;
-                //     }
-
-                //     x = centerX + dx;
-                //     y = centerY + dy;
-
-                //     attempts++;
-                // }
-
-                usedPositions.push({ x, y });
-                console.log(usedPositions);
-
-                nodes.push({
-                    data: {
-                        id: elements[i],
-                        label: elements[i]
-                    },
-                    position: {
-                        x: x,
-                        y: y
-                    }
-                });
-
-                let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
-                for (let j = 0; j < lonePairs[i]; j++) {
-                    let angle = j * lonePairAngleStep; 
-                    let offsetX = 20 * Math.cos(angle); 
-                    let offsetY = 20 * Math.sin(angle);
-                    lonePairCounter++;
-
-                    const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
+                    let x = centers[centerIdx] + 120 * Math.cos(angle);
+                    let y = centerY + 120 * Math.sin(angle);
 
                     nodes.push({
                         data: {
-                            id: lonePairID,
-                            label: "l"
+                            id: elements[bondedIdx],
+                            label: elements[bondedIdx]
                         },
-                        position: {
-                            x: x + offsetX,
-                            y: y + offsetY
-                        }
-                    });
-
-                    edges.push({
-                        data: {
-                            source: elements[i],
-                            target: lonePairID,
-                            label: '',
-                        }
+                        position: { x, y }
                     });
                 }
             }
-                
-            console.log(nodes);
-            let bondIndex = 0;
+            // count = 0;
+            // starter = 0;
+            // startFrom = lastCenter;
+            // endAt = 0;
+            // let bondAngle = 0;
+            // for (let i = lastCenter; i < centers.length; i++){
+            //     if (centers[i] == centers[starter]){
+            //         count++;
+            //     } else{
+            //         endAt = count + startFrom;
+            //         bondAngle = (2 * Math.PI) / count;
+            //         for (let j = startFrom; j < endAt; j++){
+            //             let angle = j * bondAngle;
+            //             x = centers[starter] + 120 * Math.cos(angle);
+            //             y = centerY + 120 * Math.sin(angle);
+
+            //             nodes.push({
+            //                 data: {
+            //                     id: elements[j],
+            //                     label: elements[j]
+            //                 },
+            //                 position: {
+            //                     x: x,
+            //                     y: y
+            //                 }
+            //             });
+            //         }
+            //         startFrom = endAt;
+            //         starter++;
+            //         count = 1;
+            //     }
+            // }
+            // for (let i = 0; i < bonds.length; i++) {
+            //     if (bonds[i] > 0){
+            //         count++;
+            //     }
+            // }
+            // // for (let i = 0; i < lonePairs.length; i++) {
+            //     if (lonePairs[i] > 0){
+            //         count++;
+            //     }
+            // }
+            //let bondAngle = (2 * Math.PI) / count;
+            //console.log(bondAngle);
+
             for (let i = 0; i < elements.length; i++) {
-                for (let j = i + 1; j < elements.length; j++) {
-                    let bond = bonds[bondIndex];
-                    bondIndex++;
-                    if (bond > 0) {
+                // // let angle = i * bondAngle;
+                // // console.log(angle)
+                // // x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
+                // // y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
+
+                // // nodes.push({
+                // //     data: {
+                // //         id: elements[i],
+                // //         label: elements[i]
+                // //     },
+                // //     position: {
+                // //         x: x,
+                // //         y: y
+                // //     }
+                // // });
+
+                // for (let i = 0; i < elements.length; i++) {
+                //     let angle = i * bondAngle;
+                    
+                //     x = centers[i];
+                //     if (i >= lastCenter){
+                //         if (elements[i].substring(1) % 2 == 0 || elements[i].length == 1){
+                //             y = centerY - 100;
+                //             // if (positionOccupied(x, y, usedPositions)){
+                //             //     y = centerY;
+                //             //     x = x - 100;
+                //             //     console.log("Occupied position, moving left");
+                //             // }
+                //         } else if (elements[i].substring(1) % 2 == 1){
+                //             y = centerY + 100;
+                //             // if (positionOccupied(x, y, usedPositions)){
+                //             //     y = centerY;
+                //             //     x = x + 100;
+                //             //     console.log("Occupied position, moving left");
+                //             // }
+                //         } else {
+                //             y = centerY;
+                //             x = x - 100;
+                //         }
+                //     }
+                //     console.log(lastCenter);
+                //     // if (lastCenter == 0){
+                //     //     x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
+                //     //     y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
+                //     // }
+
+                //     let attempts = 0;
+                //     let maxAttempts = 20;
+
+                //     // while (positionOccupied(x, y, usedPositions) && attempts < maxAttempts) {
+                //     //     let dx = 0, dy = 0;
+
+                //     //     switch (attempts % 4) {
+                //     //         case 0: dx = 100; dy = -100; break;
+                //     //         case 1: dx = 100; dy = 100; break;
+                //     //         case 2: dx = -100; dy = 100; break;
+                //     //         case 3: dx = -100; dy = -100; break;
+                //     //     }
+
+                //     //     x = centerX + dx;
+                //     //     y = centerY + dy;
+
+                //     //     attempts++;
+                //     // }
+                //     while (positionOccupied(x, y, usedPositions) && attempts < 20) {
+                //         y = 250
+                //         x = centers[i];
+                //         switch (attempts % 4) {
+                //             case 0: y += 100; break;
+                //             // case 1: x -= 100; y -= 100; break;
+                //             // case 2: x += 200; y += 100; break;
+                //             // case 3: x += 100; y += 100; break;
+                //             // case 4: x -= 100; y -= 100; break;
+                //             case 6: x += 100; break;
+                //             case 5: x -= 100; break;
+                //             case 7: y += 100; break;
+                //         }
+                //         attempts++;
+                //     }
+
+                //     usedPositions.push({ x, y });
+                //     console.log(usedPositions);
+
+                //     nodes.push({
+                //         data: {
+                //             id: elements[i],
+                //             label: elements[i]
+                //         },
+                //         position: {
+                //             x: x,
+                //             y: y
+                //         }
+                //     });
+
+                    let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
+                    for (let j = 0; j < lonePairs[i]; j++) {
+                        let angle = j * lonePairAngleStep; 
+                        let offsetX = 20 * Math.cos(angle); 
+                        let offsetY = 20 * Math.sin(angle);
+                        lonePairCounter++;
+
+                        const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
+
+                        nodes.push({
+                            data: {
+                                id: lonePairID,
+                                label: "l"
+                            },
+                            position: {
+                                x: x + offsetX,
+                                y: y + offsetY
+                            }
+                        });
+
                         edges.push({
                             data: {
                                 source: elements[i],
-                                target: elements[j],
-                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
+                                target: lonePairID,
+                                label: '',
                             }
                         });
                     }
                 }
-            }
+                
+                console.log(nodes);
+                let bondIndex = 0;
+                for (let i = 0; i < elements.length; i++) {
+                    for (let j = i + 1; j < elements.length; j++) {
+                        let bond = bonds[bondIndex];
+                        bondIndex++;
+                        if (bond > 0) {
+                            edges.push({
+                                data: {
+                                    source: elements[i],
+                                    target: elements[j],
+                                    label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
+                                }
+                            });
+                        }
+                    }
+                }
 
-            nodes.push({
-                    data: {
-                        id: 0,
-                        label: 0
-                    },
-                    position: {
-                        x: 0,
-                        y: 0
-                    }
-            });
-            nodes.push({
-                    data: {
-                        id: 100,
-                        label: 100
-                    },
-                    position: {
-                        x: 100,
-                        y: 100
-                    }
-            });
-            console.log(edges);
-            return { nodes, edges, centers, lastCenter, bonds };
-        }
+                // nodes.push({
+                //         data: {
+                //             id: 0,
+                //             label: 0
+                //         },
+                //         position: {
+                //             x: 0,
+                //             y: 0
+                //         }
+                // });
+                // nodes.push({
+                //         data: {
+                //             id: 100,
+                //             label: 100
+                //         },
+                //         position: {
+                //             x: 100,
+                //             y: 100
+                //         }
+                // });
+                console.log(edges);
+                return { nodes, edges, centers, lastCenter, bonds };
+            }
 
         function positionOccupied(x, y, usedPositions) {
             return usedPositions.some(pos => pos.x === x && pos.y === y);
@@ -848,10 +1037,11 @@
                     attempts++;
                 }
 
-                node.position.x = x;
-                node.position.y = y;
-
-                usedPositions.push({ x, y });
+                if (withinBounds(x, y)) {
+                    node.position.x = x;
+                    node.position.y = y;
+                    usedPositions.push({ x, y });
+                }
 
             }
             return nodes;
@@ -898,19 +1088,19 @@
         function getBondAngle(bonds, lonePairs){
             console.log(bonds);
             console.log(lonePairs);
-            if (bonds == 2 && lonePairs == 0){
-                return Math.PI;
-            } else if (bonds == 3 && lonePairs == 0){
-                return (120 * Math.PI) / 180;
-            } else if (bonds == 2 && lonePairs >= 1){
-                return (104.5 * Math.PI) / 180;
-            } else if (bonds == 4 && lonePairs == 0){
-                return (109.5 * Math.PI) / 180;
-            } else if (bonds == 3 && lonePairs == 1){
-                return (107 * Math.PI) / 180;
-            } else if (bonds == 2 && lonePairs == 2){
-                return(104.9 * Math.PI) /180;
-            }
+            // if (bonds == 2 && lonePairs == 0){
+            //     return Math.PI;
+            // } else if (bonds == 3 && lonePairs == 0){
+            //     return (120 * Math.PI) / 180;
+            // } else if (bonds == 2 && lonePairs >= 1){
+            //     return (104.5 * Math.PI) / 180;
+            // } else if (bonds == 4 && lonePairs == 0){
+            //     return (109.5 * Math.PI) / 180;
+            // } else if (bonds == 3 && lonePairs == 1){
+            //     return (107 * Math.PI) / 180;
+            // } else if (bonds == 2 && lonePairs == 2){
+            //     return(104.9 * Math.PI) /180;
+            // }
 
             return (90 * Math.PI) /180;
         }
