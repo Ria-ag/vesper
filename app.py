@@ -58,10 +58,16 @@ def createWCSPFile(inp, btype):
     #gets electronegativity of each element
     electronegativity = []
     for element in newSplit:
-        if element in electronegativities:
-            electronegativity.append(electronegativities[element])
-        else:
-            raise ValueError(f"Unknown element {element}. Please add it to the electronegativities dictionary.") #will not need once replaced with library
+        try:
+            ele = Element(element)
+            # Use 'Electronegativity' (string, convert to float) from chemlib
+            en_str = getattr(ele, "Electronegativity", None)
+            en = float(en_str) if en_str is not None else None
+            if en is None:
+                raise ValueError(f"Electronegativity not found for element {element}.")
+            electronegativity.append(en)
+        except Exception as e:
+            raise ValueError(f"Unknown element {element} or missing electronegativity in chemlib. {e}")
 
     #finds central atoms (lowest electronegativity, excluding certain elements)
     excluded = {"H", "F", "Cl", "Br", "I"}
@@ -91,11 +97,15 @@ def createWCSPFile(inp, btype):
     totalVal = 0
     valence = []
     for element in newSplit:
-        if element in valence_electrons:
-            valence.append(valence_electrons[element])
-            totalVal += valence_electrons[element]
-        else:
-            raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.") #will not need once replaced with library
+        try:
+            ele = Element(element)
+            ve = getattr(ele, "Valence", None)
+            if ve is None:
+                raise ValueError(f"Valence electrons not found for element {element}.")
+            valence.append(ve)
+            totalVal += ve
+        except Exception as e:
+            raise ValueError(f"Unknown element {element} or missing valence electrons in chemlib. {e}")
 
     #creates the WCSP file
     with open("model_temp.wcsp", "w+") as f:

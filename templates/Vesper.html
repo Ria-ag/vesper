@@ -585,13 +585,18 @@
                     count++;
                 }
             }
-            for (let i = 0; i < lonePairs.length; i++) {
-                if (lonePairs[i] > 0){
-                    count++;
-                }
+
+            if (lonePairs[0] > 0){
+                count++;
             }
+
             // Calculate the bond angle based on the number of elements
-            let bondAngle = (2 * Math.PI) / count;
+            let bondAngle;
+            if (count === 0) {
+                bondAngle = 0; // Avoid division by zero
+            } else {
+                bondAngle = (2 * Math.PI) / count;
+            }
             console.log(bondAngle);
 
             for (let i = 0; i < elements.length; i++) {
@@ -872,7 +877,7 @@
 
         // Cytoscape setup for user-drawn model
         const idCounts = {};
-        const actionHistory = {};
+        const actionHistory = [];
         const cy = cytoscape({
             container: document.getElementById('mcy'),
             elements: [],
