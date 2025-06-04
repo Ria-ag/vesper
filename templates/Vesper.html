@@ -112,7 +112,6 @@
         .toolbox-container {
             flex: 1;
             height: 800px;
-            /* width: 150px; */
             padding: 1rem;
             background-color: #506172;
             border-radius: 1rem;
@@ -364,7 +363,6 @@
                 
                 outputs.slice(0, 3).forEach((output, index) => {
                     const input = output.match(/solution\(0\):\s+([\d\s]+)/)[1];
-                    // document.getElementById('output').textContent += `Solution ${index + 1}: ${output}\n`;
                     text = `Solution ${index + 1}: ${output}\n`;
                     console.log(text);
                     console.log('Parsed input:', input);
@@ -377,11 +375,6 @@
                     }
                     graphs.push(graph);
                 });
-
-                // if (graphs.length > 1){
-                //     document.getElementById('next').style.display = "inline";
-                //     document.getElementById('back').style.display = "inline";
-                // }
 
                 if (graphs.length > 1){
                     newNextBtn.style.display = "inline";
@@ -447,25 +440,9 @@
                             name: 'preset',      
                         }
                     });
-                    // updateNodePositions(cy, elements, graphs[currentIndex].centers, graphs[currentIndex].lastCenter, graphs[currentIndex].bonds);
-                    // graphs[currentIndex].nodes = overlap(graphs[currentIndex].nodes, graphs[currentIndex].centers);
                 }
 
                     updateGraph();
-
-                    // document.getElementById('next').addEventListener('click', function() {
-                    //     if (currentIndex < graphs.length - 1){
-                    //         currentIndex++;
-                    //         updateGraph();
-                    //     }
-                    // });
-
-                    // document.getElementById('back').addEventListener('click', function() {
-                    //     if (currentIndex > 0){
-                    //         currentIndex--;
-                    //         updateGraph();
-                    //     }
-                    // });
 
                     newNextBtn.addEventListener('click', function () {
                         if (currentIndex < graphs.length - 1){
@@ -523,7 +500,7 @@
                 let label = n.data.label;
                 if (typeof label !== 'string') {
                     console.warn("Unexpected label type:", label, "in node", n);
-                    label = String(label); // or set a default like 'C'
+                    label = String(label); 
                 }
 
                 label = label.replace(/\d+$/, '');
@@ -578,9 +555,7 @@
             let centerY = 250;
             let x = 0;
             let y = 0;
-            //fix spacing for multi central atom, right now stacked on top of each other
-
-            //let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            
             count = 0;
             for (let i = 0; i < bonds.length; i++) {
                 if (bonds[i] > 0){
@@ -615,8 +590,8 @@
                 let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
                 for (let j = 0; j < lonePairs[i]; j++) {
                     let angle = j * lonePairAngleStep; 
-                    let offsetX = i == 0 ? 20 * Math.cos(angle) : 140 * Math.cos(angle); 
-                    let offsetY = i == 0 ? 20 * Math.sin(angle): 140 * Math.sin(angle);
+                    let offsetX = 20 * Math.cos(angle); 
+                    let offsetY = 20 * Math.sin(angle);
                     lonePairCounter++;
 
                     const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
@@ -628,8 +603,8 @@
                             label: "l"
                         },
                         position: {
-                            x: centerX + offsetX,
-                            y: centerY + offsetY
+                            x: x + offsetX,
+                            y: y + offsetY
                         }
                     });
 
@@ -641,36 +616,6 @@
                         }
                     });
                 }
-                // const lonePairYOffsets = [25, 25, -25, -25];
-                // const lonePairXOffsets = [-5, 10, -5, 10];
-
-                // for (let j = 0; j < lonePairs[i]; j++) {
-                //     lonePairCounter++;
-                //     const lonePairID = `lonePair${lonePairCounter}`;
-
-                //     const offsetX = lonePairXOffsets[j % lonePairXOffsets.length];
-                //     const offsetY = lonePairYOffsets[j % lonePairYOffsets.length];
-
-                //     nodes.push({
-                //         data: {
-                //             id: lonePairID,
-                //             label: 'l'
-                //         },
-                //         position: {
-                //             x: x + offsetX,
-                //             y: y + offsetY
-                //         }
-                //     });
-
-                //     edges.push({
-                //         data: {
-                //             source: elements[i],
-                //             target: lonePairID,
-                //             label: ''
-                //         }
-                //     });
-                // }
-
             }
                 
             console.log(nodes);
@@ -684,7 +629,7 @@
                             data: {
                                 source: elements[i],
                                 target: elements[j],
-                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : bonds === 6 ? 'Triple Bond' : 'Unknown Bond'
+                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
                             }
                         });
                     }
@@ -722,8 +667,8 @@
             let lastCenter = 0;
             let x = 0;
             let y = 0;
-            let bondNum = 0;
-            //let bondAngle = getBondAngle (elements.length - 1, lonePairs[0]/2);
+            let bondNum = 1;
+            let bondInc = 1;
 
             //placing central atoms
             for (let i = 0; i < elements.length; i++){
@@ -745,23 +690,28 @@
                             y: y
                         }
                     });
+                    usedPositions.push({ x, y });
                 }
             }
+            console.log(usedPositions);
 
-            //figuring out which elements are bonded to which central atom
-            for (let i = 0; i < elements.length; i++){
-                for(let j = lastCenter; j < elements.length; j++){
-                let bond = bonds[bondNum];
-                bondNum++;
-                if (bond > 0 && centers.length >= 1){
-                    centerX = centers[i];
-                    centers.push(centerX);
-                }  
+            for (let i = lastCenter; i < elements.length; i++) {
+                for (let j = 0; j < lastCenter; j++) {
+                    let bond = bonds[bondNum];
+                    bondNum += elements.length - 1;
+                    if (bond > 0) {
+                        let centerX = centers[j];
+                        centers.push(centerX);
+                    }
                 }
+                bondInc++;
+                bondNum = bondInc;
             }
+            
+            console.log(centers);
 
             let centerBondMap = {};
-            let bondInd = 0;
+            let bondInd = 1;
 
             for (let i = 0; i < lastCenter; i++) {
                 centerBondMap[i] = []; // center i
@@ -772,19 +722,47 @@
                     bondInd++;
                 }
             }
+            console.log(centerBondMap);
 
+            let min = centers[0];
+            for (let i = 0; i < centers.length; i++) {
+                if (centers[i] < min){
+                    min = centers[i];
+                }
+            }
+
+            let angle = 0;
             for (let centerIdx = 0; centerIdx < lastCenter; centerIdx++) {
                 let bonded = centerBondMap[centerIdx];
                 let numBonds = bonded.length;
-                numBonds++;
-                let angleStep = (2 * Math.PI) / numBonds;
-
+                let angleStep = (2 * Math.PI) / 4;
+                let l = 1;
                 for (let k = 0; k < numBonds; k++) {
-                    let angle = k * angleStep;
+                    if (numBonds ==2){
+                        angle = (k+l) * angleStep;
+                        l++;
+                    } else if (numBonds == 1 && centers[centerIdx] == min){
+                        angle = (k+2) * angleStep;
+                    } else {
+                        angle = k * angleStep;
+                    }
                     let bondedIdx = bonded[k];
-
                     let x = centers[centerIdx] + 120 * Math.cos(angle);
                     let y = centerY + 120 * Math.sin(angle);
+                    x = Math.round(x / 50) * 50;
+                    y = Math.round(y / 50) * 50;
+
+                    let m = k;
+                    while (positionOccupied(x, y, usedPositions)) {
+                        m++;
+                        angle = m * angleStep;
+                        x = centers[centerIdx] + 120 * Math.cos(angle);
+                        y = centerY + 120 * Math.sin(angle);
+                        x = Math.round(x / 50) * 50;
+                        y = Math.round(y / 50) * 50;
+                    }
+                    usedPositions.push({ x, y });
+                    console.log(usedPositions);
 
                     nodes.push({
                         data: {
@@ -795,146 +773,8 @@
                     });
                 }
             }
-            // count = 0;
-            // starter = 0;
-            // startFrom = lastCenter;
-            // endAt = 0;
-            // let bondAngle = 0;
-            // for (let i = lastCenter; i < centers.length; i++){
-            //     if (centers[i] == centers[starter]){
-            //         count++;
-            //     } else{
-            //         endAt = count + startFrom;
-            //         bondAngle = (2 * Math.PI) / count;
-            //         for (let j = startFrom; j < endAt; j++){
-            //             let angle = j * bondAngle;
-            //             x = centers[starter] + 120 * Math.cos(angle);
-            //             y = centerY + 120 * Math.sin(angle);
-
-            //             nodes.push({
-            //                 data: {
-            //                     id: elements[j],
-            //                     label: elements[j]
-            //                 },
-            //                 position: {
-            //                     x: x,
-            //                     y: y
-            //                 }
-            //             });
-            //         }
-            //         startFrom = endAt;
-            //         starter++;
-            //         count = 1;
-            //     }
-            // }
-            // for (let i = 0; i < bonds.length; i++) {
-            //     if (bonds[i] > 0){
-            //         count++;
-            //     }
-            // }
-            // // for (let i = 0; i < lonePairs.length; i++) {
-            //     if (lonePairs[i] > 0){
-            //         count++;
-            //     }
-            // }
-            //let bondAngle = (2 * Math.PI) / count;
-            //console.log(bondAngle);
-
-            for (let i = 0; i < elements.length; i++) {
-                // // let angle = i * bondAngle;
-                // // console.log(angle)
-                // // x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
-                // // y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
-
-                // // nodes.push({
-                // //     data: {
-                // //         id: elements[i],
-                // //         label: elements[i]
-                // //     },
-                // //     position: {
-                // //         x: x,
-                // //         y: y
-                // //     }
-                // // });
-
-                // for (let i = 0; i < elements.length; i++) {
-                //     let angle = i * bondAngle;
-                    
-                //     x = centers[i];
-                //     if (i >= lastCenter){
-                //         if (elements[i].substring(1) % 2 == 0 || elements[i].length == 1){
-                //             y = centerY - 100;
-                //             // if (positionOccupied(x, y, usedPositions)){
-                //             //     y = centerY;
-                //             //     x = x - 100;
-                //             //     console.log("Occupied position, moving left");
-                //             // }
-                //         } else if (elements[i].substring(1) % 2 == 1){
-                //             y = centerY + 100;
-                //             // if (positionOccupied(x, y, usedPositions)){
-                //             //     y = centerY;
-                //             //     x = x + 100;
-                //             //     console.log("Occupied position, moving left");
-                //             // }
-                //         } else {
-                //             y = centerY;
-                //             x = x - 100;
-                //         }
-                //     }
-                //     console.log(lastCenter);
-                //     // if (lastCenter == 0){
-                //     //     x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
-                //     //     y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
-                //     // }
-
-                //     let attempts = 0;
-                //     let maxAttempts = 20;
-
-                //     // while (positionOccupied(x, y, usedPositions) && attempts < maxAttempts) {
-                //     //     let dx = 0, dy = 0;
-
-                //     //     switch (attempts % 4) {
-                //     //         case 0: dx = 100; dy = -100; break;
-                //     //         case 1: dx = 100; dy = 100; break;
-                //     //         case 2: dx = -100; dy = 100; break;
-                //     //         case 3: dx = -100; dy = -100; break;
-                //     //     }
-
-                //     //     x = centerX + dx;
-                //     //     y = centerY + dy;
-
-                //     //     attempts++;
-                //     // }
-                //     while (positionOccupied(x, y, usedPositions) && attempts < 20) {
-                //         y = 250
-                //         x = centers[i];
-                //         switch (attempts % 4) {
-                //             case 0: y += 100; break;
-                //             // case 1: x -= 100; y -= 100; break;
-                //             // case 2: x += 200; y += 100; break;
-                //             // case 3: x += 100; y += 100; break;
-                //             // case 4: x -= 100; y -= 100; break;
-                //             case 6: x += 100; break;
-                //             case 5: x -= 100; break;
-                //             case 7: y += 100; break;
-                //         }
-                //         attempts++;
-                //     }
-
-                //     usedPositions.push({ x, y });
-                //     console.log(usedPositions);
-
-                //     nodes.push({
-                //         data: {
-                //             id: elements[i],
-                //             label: elements[i]
-                //         },
-                //         position: {
-                //             x: x,
-                //             y: y
-                //         }
-                //     });
-
+        
+                for (let i = 0; i < elements.length; i++) {
                     let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
                     for (let j = 0; j < lonePairs[i]; j++) {
                         let angle = j * lonePairAngleStep; 
@@ -950,8 +790,8 @@
                                 label: "l"
                             },
                             position: {
-                                x: x + offsetX,
-                                y: y + offsetY
+                                x: usedPositions[i].x + offsetX,
+                                y: usedPositions[i].y + offsetY
                             }
                         });
 
@@ -982,27 +822,6 @@
                         }
                     }
                 }
-
-                // nodes.push({
-                //         data: {
-                //             id: 0,
-                //             label: 0
-                //         },
-                //         position: {
-                //             x: 0,
-                //             y: 0
-                //         }
-                // });
-                // nodes.push({
-                //         data: {
-                //             id: 100,
-                //             label: 100
-                //         },
-                //         position: {
-                //             x: 100,
-                //             y: 100
-                //         }
-                // });
                 console.log(edges);
                 return { nodes, edges, centers, lastCenter, bonds };
             }
@@ -1083,26 +902,6 @@
                     }
                 }
             }
-        }
-
-        function getBondAngle(bonds, lonePairs){
-            console.log(bonds);
-            console.log(lonePairs);
-            // if (bonds == 2 && lonePairs == 0){
-            //     return Math.PI;
-            // } else if (bonds == 3 && lonePairs == 0){
-            //     return (120 * Math.PI) / 180;
-            // } else if (bonds == 2 && lonePairs >= 1){
-            //     return (104.5 * Math.PI) / 180;
-            // } else if (bonds == 4 && lonePairs == 0){
-            //     return (109.5 * Math.PI) / 180;
-            // } else if (bonds == 3 && lonePairs == 1){
-            //     return (107 * Math.PI) / 180;
-            // } else if (bonds == 2 && lonePairs == 2){
-            //     return(104.9 * Math.PI) /180;
-            // }
-
-            return (90 * Math.PI) /180;
         }
 
         const idCounts = {};
