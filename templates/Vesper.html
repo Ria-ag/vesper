@@ -1,12 +1,25 @@
+<!--
+    The Lewis Playground
+    --------------------------------------
+    This web application allows users to visualize and interact with Lewis dot structures
+    and VSEPR models for molecules. It supports both 2D and 3D visualization, periodic table
+    input, and user-driven model construction and validation.
+
+    Author: Ria Agarwal
+    Last Modified: 6/3/2025
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vesper</title>
+    <!--other files must be in static folder for it to work in google console-->
     <script src="{{ url_for('static', filename='cytoscape.min.js') }}"></script>
     <script src="{{ url_for('static', filename='interact.min.js') }}"></script>
     <script src="{{ url_for('static', filename='3Dmol-min.js') }}"></script>
+    <!--all css code here-->
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -228,11 +241,7 @@
             background-color: #506172;
         }
 
-        #next{
-            display: none;
-        }
-
-        #back{
+        #next, #back {
             display: none;
         }
 
@@ -254,12 +263,13 @@
         <div class="skewed"></div>
       </section>
     <div class = "container">
+        <!-- Top row with form and output -->
         <div class = "top-row">
             <div class = "form-container">
                 <h1>The Lewis Playground</h1>
                 <p>Welcome to The Lewis Playground</p>
                 <br>
-                <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. <br> Try it out!</p>
+                <p>We use a combinatorics algorithm to solve what the Lewis Dot Structure of a molecule will look like. Note that this doesn't support all molecules yet.<br> Try it out!</p>
                 <p>You can enter the molecule name here or use the buttons on the periodic table below</p>
                 <form id="wcspForm">
                     <label for="type">Bond type:</label>
@@ -287,6 +297,7 @@
             <br>
             <h1>Try It Yourself</h1>
         </div>
+        <!-- Bottom row with toolbox and manual output -->
         <div class = "bottom-row">
             <div class = "output-container">
                 <div class = "cy" id="mcy" ></div>
@@ -313,14 +324,16 @@
     </div>
 
     <script>
+        // Main event handler for molecule submission and graph rendering
         document.getElementById('wcspForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const formData = new FormData(this);
             const moleculeName = formData.get('inp');
             fetchMoleculeInfo(moleculeName);
 
-            document.getElementById('output').textContent = ''; // Reset output for each new submission
-            document.querySelectorAll('.output-container .cy:not(#mcy):not(#lcy)').forEach(div => div.remove()); // Remove dynamically created graph divs except mcy and lcy
+            // Reset output, buttons for multi solutions, and remove dynamically created graph divs except mcy and lcy
+            document.getElementById('output').textContent = '';
+            document.querySelectorAll('.output-container .cy:not(#mcy):not(#lcy)').forEach(div => div.remove());
             let graphs = [];
             let currentIndex = 0;
             const nextBtn = document.getElementById('next');
@@ -335,6 +348,7 @@
             document.getElementById("lcy").style.display = "block";
             document.getElementById("toggleView").textContent = "Switch to 3D View";
 
+            // Fetch and process molecule data from backend
             fetch('/run_code', {
                 method: 'POST',
                 body: formData,
@@ -349,6 +363,7 @@
                 return response.json();
             })
             .then(data => {
+                // Parse backend response for graph solutions
                 console.log('Data received from server:', data);
                 if (!data || !data.elements || !data.output) {
                     throw new Error('Invalid data received from server');
@@ -361,6 +376,7 @@
                 let graphs = [];
                 let currentIndex = 0;
                 
+                // Parse up to 3 solutions and build graph objects
                 outputs.slice(0, 3).forEach((output, index) => {
                     const input = output.match(/solution\(0\):\s+([\d\s]+)/)[1];
                     text = `Solution ${index + 1}: ${output}\n`;
@@ -368,6 +384,7 @@
                     console.log('Parsed input:', input);
                     let graph;
                     console.log('Elements:', elements);
+                    // Separate logic for single-center and multi-center molecules
                     if (central == 1){
                         graph = parseInputOG(input, num_vars, elements);
                     } else {
@@ -376,18 +393,20 @@
                     graphs.push(graph);
                 });
 
+                // Enable navigation buttons if multiple solutions exist
                 if (graphs.length > 1){
                     newNextBtn.style.display = "inline";
                     newBackBtn.style.display = "inline";
                 }
 
-
+                // Displays the cytoscape graph based on the current index
                 function updateGraph(){
                     const container = document.getElementById('lcy');
                     console.log('Updating graph with elements:', graphs[currentIndex].nodes);
                     var cy = cytoscape({
                         container: container,
                         elements: graphs[currentIndex].nodes.concat(graphs[currentIndex].edges),
+                        // Define the style for nodes and edges
                         style: [
                             {
                                 selector: 'node',
@@ -442,41 +461,41 @@
                     });
                 }
 
-                    updateGraph();
+                updateGraph();
 
-                    newNextBtn.addEventListener('click', function () {
-                        if (currentIndex < graphs.length - 1){
-                            currentIndex++;
-                            updateGraph();
-                        }
-                    });
+                // Navigation button event handlers for multi-solution graphs
+                newNextBtn.addEventListener('click', function () {
+                    if (currentIndex < graphs.length - 1){
+                        currentIndex++;
+                        updateGraph();
+                    }
+                });
 
-                    newBackBtn.addEventListener('click', function () {
-                        if (currentIndex > 0){
-                            currentIndex--;
-                            updateGraph();
-                        }
-                    });
+                newBackBtn.addEventListener('click', function () {
+                    if (currentIndex > 0){
+                        currentIndex--;
+                        updateGraph();
+                    }
+                });
 
-
-                    let is3DView = false;
-                    document.getElementById("toggleView").addEventListener("click", ()=> {
-                        const cyDiv = document.getElementById("lcy");
-                        const molDiv = document.getElementById("mol3d");
-                        const toggleBtn = document.getElementById("toggleView");
-                        if (is3DView) {
-                            molDiv.style.display = "none";
-                            cyDiv.style.display = "block";
-                            toggleBtn.textContent = "Switch to 3D View";
-                        } else {
-                            cyDiv.style.display = "none";
-                            molDiv.style.display = "block";
-                            render3DMolecule(graphs[currentIndex].nodes, graphs[currentIndex].edges);
-                            toggleBtn.textContent = "Switch to 2D View";
-                        }
-
-                        is3DView = !is3DView;
-                    })
+                // 2D/3D View Toggle Handler
+                let is3DView = false;
+                document.getElementById("toggleView").addEventListener("click", ()=> {
+                    const cyDiv = document.getElementById("lcy");
+                    const molDiv = document.getElementById("mol3d");
+                    const toggleBtn = document.getElementById("toggleView");
+                    if (is3DView) {
+                        molDiv.style.display = "none";
+                        cyDiv.style.display = "block";
+                        toggleBtn.textContent = "Switch to 3D View";
+                    } else {
+                        cyDiv.style.display = "none";
+                        molDiv.style.display = "block";
+                        render3DMolecule(graphs[currentIndex].nodes, graphs[currentIndex].edges);
+                        toggleBtn.textContent = "Switch to 2D View";
+                    }
+                    is3DView = !is3DView;
+                });
 
                 // Store the first graph for validation
                 window.firstGraph = graphs[0];
@@ -486,8 +505,8 @@
                 document.getElementById('output').textContent = 'Error: ' + error.message;
             });
         });
-        
 
+        // Renders a 3D molecule using 3Dmol.js and takes nodes and edges as input for the position and label of atoms
         function render3DMolecule(nodes, edges) {
             const viewer = $3Dmol.createViewer("mol3d", {
                 backgroundColor: "white"
@@ -520,7 +539,8 @@
             viewer.render();
         }
 
-
+        // Renames duplicates elements in a list by appending a count and takes the list of element symbols as input
+        // Returns a new list with duplicates renamed
         function renameDuplicates(list) {
             const result = [];
             const counts = {};
@@ -537,6 +557,8 @@
             return result;
         }
 
+        // Parses the input string for a single-center molecule and builds a graph structure with nodes and edges
+        // Takes the input string, number of variables, and a list of element symbols as parameters
         function parseInputOG(input, num_vars, elements) {
             let values = input.substring(0, num_vars*2);
             console.log(values);
@@ -551,6 +573,7 @@
             let edges = [];
             let lonePairCounter = 0;
 
+            // Defines starting center
             let centerX = 450;
             let centerY = 250;
             let x = 0;
@@ -567,6 +590,7 @@
                     count++;
                 }
             }
+            // Calculate the bond angle based on the number of elements
             let bondAngle = (2 * Math.PI) / count;
             console.log(bondAngle);
 
@@ -576,6 +600,7 @@
                 x = i == 0 ? centerX : centerX + 120 * Math.cos(angle);
                 y = i == 0 ? centerY : centerY + 120 * Math.sin(angle);
 
+                // Places nodes in position
                 nodes.push({
                     data: {
                         id: elements[i],
@@ -587,6 +612,7 @@
                     }
                 });
 
+                // Places lone pairs around the node
                 let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
                 for (let j = 0; j < lonePairs[i]; j++) {
                     let angle = j * lonePairAngleStep; 
@@ -618,6 +644,7 @@
                 }
             }
                 
+            // Creates edges based on bonds
             console.log(nodes);
             let bondIndex = 0;
             for (let i = 0; i < elements.length; i++) {
@@ -646,6 +673,8 @@
             { x: 0, y: -100 }   // up
         ];
         
+        // Parses input string for multi-center molecules and builds a graph structure with nodes and edges
+        // Takes the input string, number of variables, a list of element symbols, and the number of central atoms as parameters
         function parseInputNew(input, num_vars, elements, central) {
             let values = input.substring(0, num_vars * 2);
             console.log(values);
@@ -660,7 +689,6 @@
             let edges = [];
             let usedPositions = [];
             let lonePairCounter = 0;
-
             let centerX = 450;
             let centerY = 250;
             let centers = [];
@@ -670,7 +698,7 @@
             let bondNum = 1;
             let bondInc = 1;
 
-            //placing central atoms
+            //Places just the central atoms
             for (let i = 0; i < elements.length; i++){
                 if (elements[i].substring(0, 1) === elements[0]) {
                     x = centerX + i * (100) * (-1)**(i);
@@ -695,6 +723,7 @@
             }
             console.log(usedPositions);
 
+            // Finds which central atom each element is bonded to
             for (let i = lastCenter; i < elements.length; i++) {
                 for (let j = 0; j < lastCenter; j++) {
                     let bond = bonds[bondNum];
@@ -710,20 +739,22 @@
             
             console.log(centers);
 
+            // Creates a map of which elements each central atom is bonded to
             let centerBondMap = {};
             let bondInd = 1;
 
             for (let i = 0; i < lastCenter; i++) {
-                centerBondMap[i] = []; // center i
+                centerBondMap[i] = []; 
                 for (let j = lastCenter; j < elements.length; j++) {
                     if (bonds[bondInd] > 0) {
-                        centerBondMap[i].push(j); // center i is bonded to element j
+                        centerBondMap[i].push(j);
                     }
                     bondInd++;
                 }
             }
             console.log(centerBondMap);
 
+            // Finds which is the leftmost central atom
             let min = centers[0];
             for (let i = 0; i < centers.length; i++) {
                 if (centers[i] < min){
@@ -735,9 +766,11 @@
             for (let centerIdx = 0; centerIdx < lastCenter; centerIdx++) {
                 let bonded = centerBondMap[centerIdx];
                 let numBonds = bonded.length;
+                // Places each atom at 90 degree angle increments from the center atom
                 let angleStep = (2 * Math.PI) / 4;
                 let l = 1;
                 for (let k = 0; k < numBonds; k++) {
+                    // Adjusts the angle based on the number of bonds and the position of the center atom
                     if (numBonds ==2){
                         angle = (k+l) * angleStep;
                         l++;
@@ -752,6 +785,7 @@
                     x = Math.round(x / 50) * 50;
                     y = Math.round(y / 50) * 50;
 
+                    // Checks if the position is occupied, and if so, finds a new position by incrementing the angle
                     let m = k;
                     while (positionOccupied(x, y, usedPositions)) {
                         m++;
@@ -764,6 +798,7 @@
                     usedPositions.push({ x, y });
                     console.log(usedPositions);
 
+                    // Places the nodes of elements
                     nodes.push({
                         data: {
                             id: elements[bondedIdx],
@@ -774,138 +809,70 @@
                 }
             }
         
-                for (let i = 0; i < elements.length; i++) {
-                    let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
-                    for (let j = 0; j < lonePairs[i]; j++) {
-                        let angle = j * lonePairAngleStep; 
-                        let offsetX = 20 * Math.cos(angle); 
-                        let offsetY = 20 * Math.sin(angle);
-                        lonePairCounter++;
+            // Places the lone pairs around the nodes
+            for (let i = 0; i < elements.length; i++) {
+                let lonePairAngleStep = (2 * Math.PI) / lonePairs[i];
+                for (let j = 0; j < lonePairs[i]; j++) {
+                    let angle = j * lonePairAngleStep; 
+                    let offsetX = 20 * Math.cos(angle); 
+                    let offsetY = 20 * Math.sin(angle);
+                    lonePairCounter++;
 
-                        const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
+                    const lonePairID = lonePairCounter > 1 ? `lonePair${lonePairCounter}` : 'lonePair';
 
-                        nodes.push({
-                            data: {
-                                id: lonePairID,
-                                label: "l"
-                            },
-                            position: {
-                                x: usedPositions[i].x + offsetX,
-                                y: usedPositions[i].y + offsetY
-                            }
-                        });
+                    nodes.push({
+                        data: {
+                            id: lonePairID,
+                            label: "l"
+                        },
+                        position: {
+                            x: usedPositions[i].x + offsetX,
+                            y: usedPositions[i].y + offsetY
+                        }
+                    });
 
+                    edges.push({
+                        data: {
+                            source: elements[i],
+                            target: lonePairID,
+                            label: '',
+                        }
+                    });
+                }
+            }
+                
+            // Creates edges based on bonds
+            console.log(nodes);
+            let bondIndex = 0;
+            for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                    let bond = bonds[bondIndex];
+                    bondIndex++;
+                    if (bond > 0) {
                         edges.push({
                             data: {
                                 source: elements[i],
-                                target: lonePairID,
-                                label: '',
+                                target: elements[j],
+                                label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
                             }
                         });
                     }
                 }
-                
-                console.log(nodes);
-                let bondIndex = 0;
-                for (let i = 0; i < elements.length; i++) {
-                    for (let j = i + 1; j < elements.length; j++) {
-                        let bond = bonds[bondIndex];
-                        bondIndex++;
-                        if (bond > 0) {
-                            edges.push({
-                                data: {
-                                    source: elements[i],
-                                    target: elements[j],
-                                    label: bond === 2 ? 'Single Bond' : bond === 4 ? 'Double Bond' : 'Triple Bond'
-                                }
-                            });
-                        }
-                    }
-                }
-                console.log(edges);
-                return { nodes, edges, centers, lastCenter, bonds };
             }
+            console.log(edges);
+            return { nodes, edges, centers, lastCenter, bonds };
+        }
 
+        // Checks if a position is occupied by comparing it to the used positions
+        // Takes the x and y coordinates and the used positions array as parameters
+        // Returns true if the position is occupied, false otherwise
         function positionOccupied(x, y, usedPositions) {
             return usedPositions.some(pos => pos.x === x && pos.y === y);
         }
 
-        function withinBounds(x, y) {
-            return y >= 150 && y <= 350;
-        }
-
-        function overlap(nodes, centers){
-            let usedPositions = [];
-            for (let i = 0; i < nodes.length; i++){
-                let node = nodes[i];
-                let {x, y} = node.position;
-                let attempts = 0;
-                y = 250
-                x = centers[i];
-                while (positionOccupied(x, y, usedPositions) && attempts < 20) {
-                    switch (attempts % 4) {
-                        case 0: y += 100; break;
-                        case 1: x -= 100; y -= 100; break;
-                        case 2: x += 200; y += 100; break;
-                        case 3: x += 100; y += 100; break;
-                        case 4: x -= 100; y -= 100; break;
-                        case 5: x -= 100; break;
-                        case 6: x += 100; break;
-                        case 7: y += 100; break;
-                    }
-                    attempts++;
-                }
-
-                if (withinBounds(x, y)) {
-                    node.position.x = x;
-                    node.position.y = y;
-                    usedPositions.push({ x, y });
-                }
-
-            }
-            return nodes;
-        }
-
-        function updateNodePositions(cy, elements, centers, lastCenter, bonds) {
-            console.log('Updating node positions');
-            console.log('Elements:', elements);
-            console.log('Centers:', centers);
-            console.log('Last Center:', lastCenter);
-            console.log('Bonds:', bonds);
-
-            if (!centers || !lastCenter || !bonds) {
-                console.error('Invalid data for updating node positions');
-                return;
-            }
-
-            let bondVar = 0;
-            for (let i = 0; i < elements.length; i++) {
-                for (let j = i + 1; j < elements.length; j++) {
-                    let bond = bonds[bondVar];
-                    bondVar++;
-                    if (bond > 0){
-                        if (j > lastCenter - 1) {
-                            const element = cy.getElementById(elements[j]);
-                            if (!element) {
-                                console.error(`Element with id ${elements[j]} not found`);
-                                continue;
-                            }
-                            element.position({
-                                x: centers[i]
-                            });
-                            if (elements[j].length == 1){
-                                element.position({
-                                    x: centers[i] - 100
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        // Cytoscape setup for user-drawn model
         const idCounts = {};
-        const actionHistory = [];
+        const actionHistory = {};
         const cy = cytoscape({
             container: document.getElementById('mcy'),
             elements: [],
@@ -959,6 +926,7 @@
 
         let allElements = [];
 
+        // Fetches the periodic table data
         fetch('{{url_for("static", filename="periodic_table.json")}}')
             .then(response => response.json())
             .then(data => {
@@ -968,6 +936,8 @@
             })
             .catch(error => console.error('Error loading toolbox or periodic table:', error));
 
+            // Creates elements in the toolbox nd initializes drag  and drop functionality
+            // Takes an array of elements as input
         function displayElements(elements){
             document.querySelector('.toolbox').innerHTML = "";
             elements.forEach(element => {
@@ -981,6 +951,7 @@
             });
         }
 
+        // Showcases elements when searched for
         document.getElementById("searchBar").addEventListener("input", () =>{
                 const search = searchBar.value.toLowerCase();
                 const filteredElements = allElements.filter(el =>
@@ -989,6 +960,7 @@
                 displayElements(filteredElements);
         });
 
+        // Initializes drag and drop functionality for toolbox elements
         function initializeDrag(){
             interact('.draggable').draggable({
                 inertia: true,
@@ -1010,6 +982,8 @@
             })
         }
 
+        // Handles the drag movement of elements and takes the event as input
+        // Updates the position of the dragged element based on the drag event
         function dragMoveListener(event) {
             const target = event.target;
             const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
@@ -1022,6 +996,7 @@
 
         initializeDrag();
 
+        // Sets up the dropzone for the cytoscape container
         interact('#mcy').dropzone({
             accept: '.draggable',
             ondrop: function (event) {
@@ -1050,6 +1025,7 @@
 
         let selectedNode = null;
 
+        // Handles the tap event on nodes to select them and create edges
         cy.on('tap', 'node', function (evt) {
             const node = evt.target;
 
@@ -1073,6 +1049,7 @@
             }
         });
 
+        // Deselects the node when clicking outside of it
         cy.on('tap', function (event) {
             if (event.target === cy && selectedNode) {
                 selectedNode.style('background-color', '#61bffc');
@@ -1080,6 +1057,7 @@
             }
         });
 
+        // Handles the undo button to remove the last action performed
         document.getElementById("undoButton").addEventListener("click", ()=> {
             if (actionHistory.length > 0){
                 const lastAction = actionHistory.pop();
@@ -1087,152 +1065,15 @@
             }
         });
 
-        document.getElementById("checkForm").addEventListener('submit', function (event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-            const moleculeName = formData.get('inp');
-            fetchMoleculeInfo(moleculeName);
-            fetch('/run_code', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.statusText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const num_vars = data.num_vars;
-                const outputString = String(data.output);
-                const central = data.centrals;
-                const elements = renameDuplicates(data.elements);
-                const outputs = outputString.match(/(\d+ solution\(0\):\s+[\d\s]+)/g);
-                const input = outputs[0].match(/solution\(0\):\s+([\d\s]+)/)[1]; // Extract the first solution input
-                if (central == 1){
-                    graph = parseInputOG(input, num_vars, elements);
-                } else {
-                    graph = parseInputNew(input, num_vars, elements, central);
-                }
-                const theirGraph = getCytoscapeGraph();
-                const validation = validateGraph(theirGraph, graph);
-                document.getElementById('checkOutput').textContent = validation
-                    ? 'Graph matches the expected model!'
-                    : 'Graph does not match the expected model.';
-            })
-            .catch(error => {
-                console.error('Error occurred:', error);
-                document.getElementById('checkOutput').textContent = 'Error: ' + error.message;
-            });
-        });
-
-        function validateGraph(theirGraph, graph) {
-            const nodesMatch = validateNodes(theirGraph.nodes, graph.nodes);
-            const edgesMatch = validateEdges(theirGraph.edges, graph.edges);
-
-            return nodesMatch && edgesMatch;
-        }
-
-        function validateNodes(nodes, expectedNodes) {
-            console.log(nodes);
-            console.log(expectedNodes);
-            if (nodes.length !== expectedNodes.length) return false;
-            const nodeIds = nodes.map(node => node.id);
-            console.log(nodeIds);
-            console.log(expectedNodes.every(expected => nodeIds.includes(expected.data.id)));
-            return expectedNodes.every(expected => nodeIds.includes(expected.data.id));
-        }
-
-        function validateEdges(edges, expectedEdges) {
-            console.log(edges);
-            console.log(expectedEdges);
-            if (edges.length !== expectedEdges.length) return false;
-            const edgePairs = edges.map(edge => `${edge.source}-${edge.target}`);
-            const expectedPairs = expectedEdges.map(expected => `${expected.data.source}-${expected.data.target}`);
-            console.log(edgePairs);
-            console.log(expectedPairs);
-            return expectedPairs.every(pair => edgePairs.includes(pair));
-        }
-
-        function getCytoscapeGraph() {
-            const nodes = cy.nodes().map(node => ({
-                id: node.data('id'),
-                label: node.data('label'),
-                position: node.position()
-            }));
-
-            const edges = cy.edges().map(edge => ({
-                source: edge.data('source'),
-                target: edge.data('target'),
-                label: edge.data('label')
-            }));
-
-            return { nodes, edges };
-        }
-
-        const periodicTableData = [
-            ["H", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "He"],
-            ["Li", "Be", "", "", "", "", "", "", "", "", "", "", "B", "C", "N", "O", "F", "Ne"],
-            ["Na", "Mg", "", "", "", "", "", "", "", "", "", "", "Al", "Si", "P", "S", "Cl", "Ar"],
-            ["K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr"],
-            ["Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe"],
-            ["Cs", "Ba", "", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn"],
-            ["Fr", "Ra", "", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"],
-            ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-            ["", "", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", ""],
-            ["", "", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", ""]
-        ];
-
-        function createPeriodicTable() {
-            const periodicTable = document.getElementById("periodicTable");
-            periodicTable.innerHTML = "";
-            periodicTableData.forEach((row, rowIndex) => {
-                row.forEach((symbol, colIndex) => {
-                    if (symbol === ""){
-                        const placeholder = document.createElement("div");
-                        placeholder.classList.add("placeholder");
-                        placeholder.style.gridColumn = colIndex + 1;
-                        periodicTable.appendChild(placeholder);
-                        return;
-                    }
-                    const div = document.createElement("div");
-                    div.classList.add("element");
-                    div.id = symbol;
-                    div.style.gridColumn = colIndex + 1;
-                    div.innerHTML = `
-                        <div>
-                            <div class="element-buttons">
-                                <div class="element-button" data-action="add">+</div>
-                                <div class="element-button" data-action="subtract">-</div>
-                            </div>
-                            <div>${symbol}</div>
-                        </div>
-                    `;
-                    periodicTable.appendChild(div);
-                })
-            })
-        }
-
-        document.getElementById("periodicTable").addEventListener("click", function(event) {
-            if (event.target.classList.contains("element-button")) {
-                const elementSymbol = event.target.closest('.element').id;
-                const action = event.target.dataset.action;
-                updateInput(elementSymbol, action);
-            } else if (event.target.classList.contains("element")) {
-                const elementSymbol = event.target.id;
-                updateInput(elementSymbol, "add");
-            }
-        });
-
+        // Updates the input field based on the periodic table button add or subtract
+        // Takes the element symbol and action as parameters
         function updateInput(elementSymbol, action) {
             const input = document.getElementById("inp");
             let value = input.value;
             const regex = new RegExp(`(${elementSymbol})(\\d*)`);
             const match = value.match(regex);
 
+            // increases/decreases count if it is the same element
             if (action === "add") {
                 if (match) {
                     const count = parseInt(match[2] || "1") + 1;
@@ -1256,6 +1097,8 @@
             input.value = value;
         }
 
+        // fetches the molecule information from PubChem API and displays it
+        // Takes the molecule name as input
         function fetchMoleculeInfo(molecule) {
             fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${molecule}/JSON`)
                 .then(response => response.json())
@@ -1287,6 +1130,157 @@
                 });
             }
 
+        // User model validation and comparison logic
+        document.getElementById("checkForm").addEventListener('submit', function (event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const moleculeName = formData.get('inp');
+            // Run backend code to fetch the expected graph
+            fetchMoleculeInfo(moleculeName);
+            fetch('/run_code', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Parse the response data to get the expected graph structure
+                const num_vars = data.num_vars;
+                const outputString = String(data.output);
+                const central = data.centrals;
+                const elements = renameDuplicates(data.elements);
+                const outputs = outputString.match(/(\d+ solution\(0\):\s+[\d\s]+)/g);
+                const input = outputs[0].match(/solution\(0\):\s+([\d\s]+)/)[1]; // Extract the first solution input
+                if (central == 1){
+                    graph = parseInputOG(input, num_vars, elements);
+                } else {
+                    graph = parseInputNew(input, num_vars, elements, central);
+                }
+                const theirGraph = getCytoscapeGraph();
+                const validation = validateGraph(theirGraph, graph);
+                document.getElementById('checkOutput').textContent = validation
+                    ? 'Graph matches the expected model!'
+                    : 'Graph does not match the expected model.';
+            })
+            .catch(error => {
+                console.error('Error occurred:', error);
+                document.getElementById('checkOutput').textContent = 'Error: ' + error.message;
+            });
+        });
+
+        // Validates the user drawn graph against the expected graph
+        // Takes the user drawn graph and the expected graph as parameters
+        function validateGraph(theirGraph, graph) {
+            const nodesMatch = validateNodes(theirGraph.nodes, graph.nodes);
+            const edgesMatch = validateEdges(theirGraph.edges, graph.edges);
+
+            return nodesMatch && edgesMatch;
+        }
+
+        // Validates the nodes and edges of the user drawn graph against the expected graph
+        // Takes the user drawn nodes  and the expected nodes as parameters
+        function validateNodes(nodes, expectedNodes) {
+            console.log(nodes);
+            console.log(expectedNodes);
+            if (nodes.length !== expectedNodes.length) return false;
+            const nodeIds = nodes.map(node => node.id);
+            console.log(nodeIds);
+            console.log(expectedNodes.every(expected => nodeIds.includes(expected.data.id)));
+            return expectedNodes.every(expected => nodeIds.includes(expected.data.id));
+        }
+
+        // Validates the edges of the user drawn graph against the expected graph
+        // Takes the user drawn edges and the expected edges as parameters
+        function validateEdges(edges, expectedEdges) {
+            console.log(edges);
+            console.log(expectedEdges);
+            if (edges.length !== expectedEdges.length) return false;
+            const edgePairs = edges.map(edge => `${edge.source}-${edge.target}`);
+            const expectedPairs = expectedEdges.map(expected => `${expected.data.source}-${expected.data.target}`);
+            console.log(edgePairs);
+            console.log(expectedPairs);
+            return expectedPairs.every(pair => edgePairs.includes(pair));
+        }
+
+        // Gets the Cytoscape graph structure
+        function getCytoscapeGraph() {
+            const nodes = cy.nodes().map(node => ({
+                id: node.data('id'),
+                label: node.data('label'),
+                position: node.position()
+            }));
+
+            const edges = cy.edges().map(edge => ({
+                source: edge.data('source'),
+                target: edge.data('target'),
+                label: edge.data('label')
+            }));
+
+            return { nodes, edges };
+        }
+
+        const periodicTableData = [
+            ["H", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "He"],
+            ["Li", "Be", "", "", "", "", "", "", "", "", "", "", "B", "C", "N", "O", "F", "Ne"],
+            ["Na", "Mg", "", "", "", "", "", "", "", "", "", "", "Al", "Si", "P", "S", "Cl", "Ar"],
+            ["K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr"],
+            ["Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe"],
+            ["Cs", "Ba", "", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn"],
+            ["Fr", "Ra", "", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"],
+            ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", ""],
+            ["", "", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", ""]
+        ];
+
+        // Creates and displays the periodic table based on the data and rendering above using a grid
+        function createPeriodicTable() {
+            const periodicTable = document.getElementById("periodicTable");
+            periodicTable.innerHTML = "";
+            periodicTableData.forEach((row, rowIndex) => {
+                row.forEach((symbol, colIndex) => {
+                    if (symbol === ""){
+                        const placeholder = document.createElement("div");
+                        placeholder.classList.add("placeholder");
+                        placeholder.style.gridColumn = colIndex + 1;
+                        periodicTable.appendChild(placeholder);
+                        return;
+                    }
+                    const div = document.createElement("div");
+                    div.classList.add("element");
+                    div.id = symbol;
+                    div.style.gridColumn = colIndex + 1;
+                    div.innerHTML = `
+                        <div>
+                            <div class="element-buttons">
+                                <div class="element-button" data-action="add">+</div>
+                                <div class="element-button" data-action="subtract">-</div>
+                            </div>
+                            <div>${symbol}</div>
+                        </div>
+                    `;
+                    periodicTable.appendChild(div);
+                })
+            })
+        }
+
+        // Handles clicking in the periodic table to add or subtract elements into the input field
+        document.getElementById("periodicTable").addEventListener("click", function(event) {
+            if (event.target.classList.contains("element-button")) {
+                const elementSymbol = event.target.closest('.element').id;
+                const action = event.target.dataset.action;
+                updateInput(elementSymbol, action);
+            } else if (event.target.classList.contains("element")) {
+                const elementSymbol = event.target.id;
+                updateInput(elementSymbol, "add");
+            }
+        });
     </script>  
 </body>
 </html>

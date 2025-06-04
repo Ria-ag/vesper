@@ -1,3 +1,10 @@
+"""
+Flask backend for Vesper
+---------------------------------
+This generates Weighted Constraint Satisfaction Problems (WCSP) for chemical molecules.
+It uses the Toulbar2 solver to find solutions based on the chemical formula and bond type.
+"""
+
 import os
 import re
 import subprocess
@@ -11,11 +18,20 @@ app = Flask(__name__)
 CORS(app)
 
 def createWCSPFile(inp, btype):
-    # dictionary for valence electrons
+    """
+    Generates a WCSP file for the given chemical formula and bond type.
+    Args:
+        inp (str): Chemical formula (e.g., 'H2O').
+        btype (str): Bond type ('covalent' or 'ionic').
+    Returns:
+        tuple: (filename, number of variables, list of elements, number of central atoms)
+    """
+    # Dictionary for valence electrons
     valence_electrons = {
         'H': 1, 'He': 2, 'O': 6, 'C': 4, 'N': 5, 'Na': 1, 'Cl': 7, 'S': 6, 'P': 5, 'B': 3, 'F': 7,
         # replace this eventually with pulling this data from library
     }
+    # Dictionary for electronegativities
     electronegativities = {
         'H': 2.20, 'He': None, 'O': 3.44, 'C': 2.55, 'N': 3.04, 'Na': 0.93, 'Cl': 3.16, 'S': 2.58, 'P': 2.19, 'B': 2.04, 'F': 3.98,
     }
@@ -46,8 +62,8 @@ def createWCSPFile(inp, btype):
             electronegativity.append(electronegativities[element])
         else:
             raise ValueError(f"Unknown element {element}. Please add it to the electronegativities dictionary.") #will not need once replaced with library
-        
-    #find central atoms
+
+    #finds central atoms (lowest electronegativity, excluding certain elements)
     excluded = {"H", "F", "Cl", "Br", "I"}
     indexx = 0
     finalIndex = 0
@@ -60,6 +76,7 @@ def createWCSPFile(inp, btype):
             finalIndex = indexx
         indexx += 1
 
+    #separates central and non-central atoms
     central = []
     noncentral = []
     for element in newSplit:
@@ -70,7 +87,7 @@ def createWCSPFile(inp, btype):
 
     newSplit = central + noncentral
 
-     #gets valence of each element
+     #gets valence of each element and total valence
     totalVal = 0
     valence = []
     for element in newSplit:
@@ -80,13 +97,13 @@ def createWCSPFile(inp, btype):
         else:
             raise ValueError(f"Unknown element {element}. Please add it to the valence_electrons dictionary.") #will not need once replaced with library
 
-    #creates a file
+    #creates the WCSP file
     with open("model_temp.wcsp", "w+") as f:
         #write the header
         length = len(newSplit)
         nums = generate_nums(len(newSplit))
         combos = generate_pattern(nums)
-        num_vars = length + len(combos) 
+        num_vars = length + len(combos)
         f.write(f"Model {num_vars} 9 x 10\n")
         btype = btype.lower()
 
@@ -103,8 +120,8 @@ def createWCSPFile(inp, btype):
             f.write("7 ")
             domain += "7"
         f.write("\n")
-    
-        #create matrix for each element pairs
+
+        #creates a matrix for element pairs (for constraints)
         matrix = np.zeros([length, length], dtype=int)
         next = 1
         for i in range(length):
@@ -117,7 +134,7 @@ def createWCSPFile(inp, btype):
                     else:
                         if matrix.item((j, i)) != 0:
                             matrix[i, j] = matrix.item((j, i))
-                        else: 
+                        else:
                             matrix[i, j] = matrix.item((0, length-1)) + next
                             next += 1
 
@@ -146,7 +163,7 @@ def createWCSPFile(inp, btype):
             indexxx = length
             k = len(central)
             if k > 1:
-               for i in range(len(central) - 1):
+                for i in range(len(central) - 1):
                     f.write(f"1 {indexxx} 0 1\n0 10\n")
                     indexxx += k
                     k -= 1
@@ -182,6 +199,7 @@ def createWCSPFile(inp, btype):
                                     counter += 1
 
         else:
+            # Ionic bond constraints
             for i in range (length, num_vars):
                 f.write(f"1 {i} 10 1\n0 0\n")
                 counter += 1
@@ -218,28 +236,34 @@ def index():
 #route to run the wcsp code
 @app.route('/run_code', methods=['POST'])
 def run_code():
+    """
+    Handles POST requests to generate and solve the WCSP model.
+    Returns:
+        JSON: Output solutions, number of variables, elements, and number of central atoms.
+    """
     inp = request.form['inp']
     btype = request.form['type']
-    
-    #run og python code to generate wcsp file
+
+    # Generate WCSP file from input
     wcspFilePath, num_vars, newSplit, centrals = createWCSPFile(inp, btype)
 
-    #ssh into the instance and run toulbar2
+    # Run Toulbar2 solver on the generated WCSP file
     ssh_command = f"toulbar2 model.wcsp -s -a"
     ssh_result = subprocess.run(ssh_command, shell=True, capture_output=True, text=True)
 
-    #parse output to get all solutions
+    # Parse output to get all solutions
     output = ssh_result.stdout.splitlines()
     solutions = []
     for line in output:
         if "solution" in line:
             solutions.append(line.strip())
 
-    #return or error
+    # Return solutions or error
     if solutions:
         return jsonify({'output': solutions, 'num_vars': num_vars, 'elements': newSplit, 'centrals': centrals})
     else:
         return jsonify({'output': 'Solution not found'}), 500
-    
+
 if __name__ == '__main__':
+    # Run the Flask app on all interfaces
     app.run(host='0.0.0.0')
