@@ -11,4 +11,5 @@ Encodes bonding and valence constraints (including octet rule, formal charges, a
 Interfaces with Toulbar2 to find optimized solutions.
 Outputs Lewis structures with 2d and 3d rendering by using Cytoscape.
 Supports a variety of molecules, including: Simple covalent molecules (e.g., CH₄, H₂O), complex covalent molecules (e.g., CH₃OH), ionic compounds (e.g., NaCl).
+Currently, some complex molecules do not always produce valid structures as resonance is not fully implemented. 
 
